@@ -5,3 +5,4 @@ Makefile
 pkg
 doc
 .DS_Store
+test.rb

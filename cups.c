@@ -62,12 +62,18 @@ static VALUE cups_get_default(VALUE self) {
   }
 }
 
+static VALUE cups_job_id(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+  return job_id;
+}
+
 VALUE printJobs;
 
 void Init_cups() {
   printJobs = rb_define_class("PrintJob", rb_cObject);
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
+  rb_define_method(printJobs, "job_id", cups_job_id, 0);
   rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(printJobs, "default_printer", cups_get_default, 0);
   id_push = rb_intern("push");
