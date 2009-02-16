@@ -40,6 +40,7 @@ static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
   return dest_list;
 }
 
+// Get default printer or class. Returns a string or false if there is no default
 static VALUE cups_get_default(VALUE self) {
   char *default_printer;
   default_printer = cupsGetDefault();
