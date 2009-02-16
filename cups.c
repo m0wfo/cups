@@ -8,6 +8,7 @@
 static int id_push;
 static int num_options;
 static cups_option_t *options;
+cups_dest_t *dests, *dest;
 
 static VALUE job_init(VALUE self, VALUE filename, VALUE printer) {
   rb_iv_set(self, "@filename", filename);
@@ -40,7 +41,6 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
 
 static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
   int i;
-  cups_dest_t *dests, *dest;
   int num_dests = cupsGetDests(&dests); // Size of dest_list array
   dest_list = rb_ary_new();
   
@@ -62,9 +62,27 @@ static VALUE cups_get_default(VALUE self) {
   }
 }
 
+// Cancel the current job. Returns true if successful, false otherwise.
+static VALUE cups_cancel(VALUE self) {
+  VALUE printer, job_id;
+  printer = rb_iv_get(self, "@printer");
+  job_id = rb_iv_get(self, "@job_id");
+  
+  if (NIL_P(job_id)) {
+    return Qfalse; // If @job_id is nil
+  } else { // Otherwise attempt to cancel
+    int *job = NUM2INT(job_id);
+    char *target = RSTRING_PTR(printer); // Target printer string
+    int cancellation;
+    cancellation = cupsCancelJob(target, job);
+    return Qtrue;
+  }
+}
+
+// Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
 static VALUE cups_job_id(VALUE self) {
   VALUE job_id = rb_iv_get(self, "@job_id");
-  return job_id;
+  return self;
 }
 
 VALUE printJobs;
@@ -73,6 +91,7 @@ void Init_cups() {
   printJobs = rb_define_class("PrintJob", rb_cObject);
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
+  rb_define_method(printJobs, "cancel", cups_cancel, 0);
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
   rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(printJobs, "default_printer", cups_get_default, 0);
