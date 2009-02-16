@@ -28,13 +28,14 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   // Check @filename actually exists...
   if( fp ) {
     fclose(fp);
-    job_id = cupsPrintFile(target, fname, "Test Print", num_options, options); // Do it.
+    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it.
+    rb_iv_set(self, "@job_id", INT2NUM(job_id));
+    return job_id;
   } else {
   // and if it doesn't...
     rb_raise(rb_eRuntimeError, "Couldn't find file");
+    return self;
   }
-    
-  return job_id;
 }
 
 static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
