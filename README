@@ -1,0 +1,4 @@
+Assumptions:
+
+* Setting up CUPS & requisite print drivers is already part of your sys-admin repertoire
+* You're only looking for destinations which have been set up locally

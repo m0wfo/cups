@@ -1,7 +1,9 @@
 require "cups"
 
-pj = PrintJob.new("/Users/chris/Documents/hash_server.rb", "PDF_Printer")
+# pj = PrintJob.new("/Users/chris/Documents/hash_server.rb", "soft_class")
 
-p pj.inspect
+# p pj.inspect
 
-pj.print
+p PrintJob.show_destinations
+
+# pj.print

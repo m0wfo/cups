@@ -23,9 +23,21 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   char *fname = RSTRING_PTR(file); // Filename
   char *target = RSTRING_PTR(printer); // Target printer string
 
-  job_id = cupsPrintFile(target, fname,
-                          "Test Print", num_options, options);
+  job_id = cupsPrintFile(target, fname, "Test Print", num_options, options); // Do it.
   return job_id;
+}
+
+static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
+  int i;
+  cups_dest_t *dests, *dest;
+  int num_dests = cupsGetDests(&dests);
+  dest_list = rb_ary_new();
+  
+  for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
+    VALUE destination = rb_str_new2(dest->name);
+    rb_ary_push(dest_list, destination);
+  }
+  return dest_list;
 }
 
 VALUE printJobs;
@@ -34,5 +46,6 @@ void Init_cups() {
   printJobs = rb_define_class("PrintJob", rb_cObject);
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
+  rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
   id_push = rb_intern("push");
 }
