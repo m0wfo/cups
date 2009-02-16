@@ -1,2 +1,7 @@
 Makefile
-cups.c.out
+*.o
+*.bundle
+*.so
+pkg
+doc
+.DS_Store
