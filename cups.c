@@ -30,14 +30,24 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
 static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
   int i;
   cups_dest_t *dests, *dest;
-  int num_dests = cupsGetDests(&dests);
+  int num_dests = cupsGetDests(&dests); // Size of dest_list array
   dest_list = rb_ary_new();
   
   for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
     VALUE destination = rb_str_new2(dest->name);
-    rb_ary_push(dest_list, destination);
+    rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
   }
   return dest_list;
+}
+
+static VALUE cups_get_default(VALUE self) {
+  char *default_printer;
+  default_printer = cupsGetDefault();
+
+  if (default_printer != NULL) {
+    VALUE def_p = rb_str_new2(default_printer);
+    return def_p;
+  }
 }
 
 VALUE printJobs;
@@ -47,5 +57,6 @@ void Init_cups() {
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
+  rb_define_singleton_method(printJobs, "default_printer", cups_get_default, 0);
   id_push = rb_intern("push");
 }

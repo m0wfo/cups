@@ -4,6 +4,7 @@ require "cups"
 
 # p pj.inspect
 
-p PrintJob.show_destinations
+# p PrintJob.show_destinations
+p PrintJob.default_printer
 
 # pj.print
