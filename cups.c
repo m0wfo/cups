@@ -15,6 +15,7 @@ static VALUE job_init(VALUE self, VALUE filename, VALUE printer) {
   return self;
 }
 
+// Submit a print job to the selected printer or class
 static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   int job_id;
   file = rb_iv_get(self, "@filename");
@@ -22,8 +23,17 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   
   char *fname = RSTRING_PTR(file); // Filename
   char *target = RSTRING_PTR(printer); // Target printer string
-
-  job_id = cupsPrintFile(target, fname, "Test Print", num_options, options); // Do it.
+  
+  FILE *fp = fopen(fname,"r");
+  // Check @filename actually exists...
+  if( fp ) {
+    fclose(fp);
+    job_id = cupsPrintFile(target, fname, "Test Print", num_options, options); // Do it.
+  } else {
+  // and if it doesn't...
+    rb_raise(rb_eRuntimeError, "Couldn't find file");
+  }
+    
   return job_id;
 }
 
