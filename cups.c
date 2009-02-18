@@ -39,7 +39,8 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   }
 }
 
-static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
+static VALUE cups_show_dests(VALUE self) {
+  VALUE dest_list;
   int i;
   int num_dests = cupsGetDests(&dests); // Size of dest_list array
   dest_list = rb_ary_new();
@@ -85,31 +86,48 @@ static VALUE cups_job_id(VALUE self) {
   return self;
 }
 
-// Get jobs
-static VALUE cups_get_jobs(VALUE self) {
-  VALUE job_list;
-  int i;
+// Get all jobs
+static VALUE cups_get_jobs(VALUE self, VALUE printer) {
+  VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat;
+  int job_id;
+  int num_jobs;
   cups_job_t *jobs;
-  // int num_jobs = cupsGetJobs(job, NULL, 1, 1); // Get jobs
-  job_list = rb_ary_new();
+  ipp_jstate_t state;
+  int i;
+  char *printer_arg = RSTRING_PTR(printer);
   
-  // for (i = num_jobs, job = jobs; i > 0; i --, job ++) {
-  //   VALUE destination = rb_str_new2(dest->name);
-  //   rb_ary_push(job_list, destination); // Add this testination name to dest_list string
-  // }
+  num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
+  job_list = rb_hash_new();
+  
+  for (i = 0; i < num_jobs; i ++) { // Construct a hash of individual job info
+    job_info_ary = rb_ary_new();
+    jid = INT2NUM(jobs[i].id);
+    jtitle = rb_str_new2(jobs[i].title);
+    juser = rb_str_new2(jobs[i].user);
+    jsize = INT2NUM(jobs[i].size);
+    jformat = rb_str_new2(jobs[i].format);
+    
+    rb_ary_push(job_info_ary, jtitle);
+    rb_ary_push(job_info_ary, juser);
+    rb_ary_push(job_info_ary, jsize);
+    rb_ary_push(job_info_ary, jformat);
+    
+    rb_hash_aset(job_list, jid, job_info_ary); // And push it all into job_list hash
+  }
   return job_list;
 }
 
-VALUE printJobs;
+VALUE rubyCups, printJobs;
 
 void Init_cups() {
+  rubyCups = rb_define_class("Cups", rb_cObject);
   printJobs = rb_define_class("PrintJob", rb_cObject);
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
-  rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
-  rb_define_singleton_method(printJobs, "default_printer", cups_get_default, 0);
-  rb_define_singleton_method(printJobs, "all_jobs", cups_get_jobs, 0);
+  rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
+  rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
+  rb_define_singleton_method(rubyCups, "all_jobs_on", cups_get_jobs, 1);
   id_push = rb_intern("push");
 }
