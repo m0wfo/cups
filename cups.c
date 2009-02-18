@@ -53,7 +53,7 @@ static VALUE cups_show_dests(VALUE self, VALUE dest_list) {
 
 // Get default printer or class. Returns a string or false if there is no default
 static VALUE cups_get_default(VALUE self) {
-  char *default_printer;
+  const char *default_printer;
   default_printer = cupsGetDefault();
 
   if (default_printer != NULL) {
@@ -71,7 +71,7 @@ static VALUE cups_cancel(VALUE self) {
   if (NIL_P(job_id)) {
     return Qfalse; // If @job_id is nil
   } else { // Otherwise attempt to cancel
-    int *job = NUM2INT(job_id);
+    int job = NUM2INT(job_id);
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
@@ -85,6 +85,21 @@ static VALUE cups_job_id(VALUE self) {
   return self;
 }
 
+// Get jobs
+static VALUE cups_get_jobs(VALUE self) {
+  VALUE job_list;
+  int i;
+  cups_job_t *jobs;
+  // int num_jobs = cupsGetJobs(job, NULL, 1, 1); // Get jobs
+  job_list = rb_ary_new();
+  
+  // for (i = num_jobs, job = jobs; i > 0; i --, job ++) {
+  //   VALUE destination = rb_str_new2(dest->name);
+  //   rb_ary_push(job_list, destination); // Add this testination name to dest_list string
+  // }
+  return job_list;
+}
+
 VALUE printJobs;
 
 void Init_cups() {
@@ -95,5 +110,6 @@ void Init_cups() {
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
   rb_define_singleton_method(printJobs, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(printJobs, "default_printer", cups_get_default, 0);
+  rb_define_singleton_method(printJobs, "all_jobs", cups_get_jobs, 0);
   id_push = rb_intern("push");
 }
