@@ -1,6 +1,11 @@
-== Cups
+= Cups
 
-Ello
+Print stuff in Ruby. This gem is a C wrapper for the CUPS API.
+
+== Assumptions
+
+* Setting up CUPS & requisite print drivers is already part of your sys-admin repertoire
+* You're only looking for destinations which have been set up locally
 
 (The MIT License)
 
