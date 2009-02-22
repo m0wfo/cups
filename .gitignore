@@ -2,7 +2,8 @@ Makefile
 *.o
 *.bundle
 *.so
+*.out
 pkg
 doc
 .DS_Store
-test.rb
+*.gem

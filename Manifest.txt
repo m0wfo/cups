@@ -1,0 +1,6 @@
+ext/cups.c
+ext/extconf.c
+Manifest.txt
+Rakefile
+README
+test/cups_test.rb

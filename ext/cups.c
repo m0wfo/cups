@@ -5,7 +5,6 @@
   #define MAXOPTS 100
 #endif
 
-static int id_push;
 static int num_options;
 static cups_option_t *options;
 cups_dest_t *dests, *dest;
@@ -120,14 +119,17 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
 VALUE rubyCups, printJobs;
 
 void Init_cups() {
-  rubyCups = rb_define_class("Cups", rb_cObject);
-  printJobs = rb_define_class("PrintJob", rb_cObject);
+  rubyCups = rb_define_module("Cups");
+  printJobs = rb_define_class_under(rubyCups, "PrintJob", rb_cObject);
+
+  // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, 2);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
+
+  // Cups Module Methods
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "jobs_on", cups_get_jobs, 1);
-  id_push = rb_intern("push");
 }

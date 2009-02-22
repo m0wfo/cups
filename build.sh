@@ -1,5 +1,3 @@
 #!/bin/bash
-make clean
-ruby extconf.rb
-make
-sudo make install
+gem uninstall cups
+gem install cups
