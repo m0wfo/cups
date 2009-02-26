@@ -7,3 +7,4 @@ pkg
 doc
 .DS_Store
 *.gem
+ext/build.sh
