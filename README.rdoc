@@ -15,7 +15,7 @@ will set everything up.
 * Setting up CUPS & requisite print drivers is already part of your sys-admin repertoire
 * You're only looking for destinations which have been set up locally
 
-(The MIT License)
+=== (The MIT License)
 
 Copyright (c) 2009 Chris Mowforth
 
