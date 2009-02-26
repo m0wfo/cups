@@ -12,6 +12,7 @@ cups_dest_t *dests, *dest;
 static VALUE job_init(VALUE self, VALUE filename, VALUE printer) {
   rb_iv_set(self, "@filename", filename);
   rb_iv_set(self, "@printer", printer);
+  // rb_raise(rb_eRuntimeError, "Printer or destination doesn't exist");
   return self;
 }
 
@@ -82,7 +83,12 @@ static VALUE cups_cancel(VALUE self) {
 // Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
 static VALUE cups_job_id(VALUE self) {
   VALUE job_id = rb_iv_get(self, "@job_id");
-  return self;
+  
+  if (NIL_P(job_id)) {
+    return Qnil;
+  } else {
+    return job_id; // Return job id if there is one
+  }
 }
 
 // Get all jobs

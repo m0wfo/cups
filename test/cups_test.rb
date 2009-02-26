@@ -1,5 +1,9 @@
 require "cups"
 require "test/unit"
+require "flexmock/test_unit"
+
+# The tests which don't make use of mocking go on the operating assumption that you have
+# the CUPS command line utilities installed and in your $PATH
 
 class CupsTest < Test::Unit::TestCase
   def test_same_printers_returned
@@ -15,11 +19,29 @@ class CupsTest < Test::Unit::TestCase
     end
     
     assert_nothing_raised do
-      Cups::PrintJob.new("test_printer", "/path")
+      Cups::PrintJob.new("/path", "PDF_Printer")
     end
   end
   
-  def test_we_cant_print_to_nonexistant_printers
-    true
+  def test_we_cant_print_to_nonexistent_printers
+    # assert_raises(RuntimeError)
+  end
+  
+  def test_we_cant_print_nonexistent_files
+    pj = Cups::PrintJob.new("/non/existent/file", "test_printer")
+    
+    assert_raises(RuntimeError) do
+      pj.print
+    end
+  
+    assert_nil pj.job_id
+  end
+  
+  def test_print_job_cancellation
+    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    pj.print
+    assert_not_nil pj.job_id
+    assert_equal pj.cancel, true
+    assert pj.job_id.is_a?(Fixnum)
   end
 end
