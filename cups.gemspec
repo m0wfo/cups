@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{cups}
-  s.version = "0.0.1"
+  s.version = "0.0.2"
   s.authors = ["Chris Mowforth"]
   s.email = ["chris@mowforth.com"]
   s.summary = "Print stuff through the Common Unix Printing System using Ruby"
