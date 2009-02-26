@@ -6,7 +6,7 @@ Print stuff in Ruby. This gem is a C wrapper for the CUPS API.
 
 To build the extensions, you need the cups library installed, and have the cups-config programme in your path. On OS X you should have everything you need. On Debian/Ubuntu, running:
 
-sudo apt-get install libcupsys2-dev
+  sudo apt-get install libcupsys2-dev
 
 will set everything up.
 
