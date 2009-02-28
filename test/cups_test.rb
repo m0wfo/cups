@@ -14,12 +14,13 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_can_instantiate_print_job_object_with_correct_args
-    assert_raises(ArgumentError) do
+    assert_raise(ArgumentError) do
       Cups::PrintJob.new
     end
     
     assert_nothing_raised do
       Cups::PrintJob.new("/path", "PDF_Printer")
+      Cups::PrintJob.new("/path")
     end
   end
   
@@ -32,17 +33,17 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_we_cant_print_to_nonexistent_printers
-    # assert_raises(RuntimeError) do
+    assert_raise(RuntimeError) do
       pj = Cups::PrintJob.new("/non/existent/file", "bollocks_printer")
       
       assert !Cups.show_destinations.include?(pj.instance_variable_get(:@printer))
-    # end
+    end
   end
   
   def test_we_cant_print_nonexistent_files
     pj = Cups::PrintJob.new("/non/existent/file", "soft_class")
     
-    assert_raises(RuntimeError) do
+    assert_raise(RuntimeError) do
       pj.print
     end
   

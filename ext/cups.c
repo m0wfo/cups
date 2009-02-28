@@ -10,21 +10,34 @@ static cups_option_t *options;
 cups_dest_t *dests, *dest;
 
 static VALUE job_init(int argc, VALUE* argv, VALUE self) {
-  VALUE filename;
-  VALUE printer;
-  VALUE dest_list;
+  VALUE filename, printer, dest_list;
   
   rb_scan_args(argc, argv, "11", &filename, &printer);
   
   rb_iv_set(self, "@filename", filename);
   
   if (NIL_P(printer)) {
+    // Fall back to default printer
     const char *default_printer;
     default_printer = cupsGetDefault();
     VALUE def_p = rb_str_new2(default_printer);
     rb_iv_set(self, "@printer", def_p);
   } else {
-    rb_iv_set(self, "@printer", printer);
+    // Check that the destination specified actually exists
+    int i;
+    int num_dests = cupsGetDests(&dests); // Size of dest_list array
+    dest_list = rb_ary_new();
+    
+    for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
+      VALUE destination = rb_str_new2(dest->name);
+      rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
+    }
+    
+    if (rb_ary_includes(dest_list, printer)) {
+      rb_iv_set(self, "@printer", printer);
+    } else {
+      rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+    }
   }
   
   return self;
