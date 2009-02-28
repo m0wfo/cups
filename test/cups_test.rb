@@ -23,12 +23,24 @@ class CupsTest < Test::Unit::TestCase
     end
   end
   
+  def test_job_defaults_to_default
+    assert_nothing_raised do
+      pj = Cups::PrintJob.new("/non/existent/file")
+
+      assert_equal pj.instance_variable_get(:@printer), Cups.default_printer
+    end
+  end
+  
   def test_we_cant_print_to_nonexistent_printers
-    # assert_raises(RuntimeError)
+    # assert_raises(RuntimeError) do
+      pj = Cups::PrintJob.new("/non/existent/file", "bollocks_printer")
+      
+      assert !Cups.show_destinations.include?(pj.instance_variable_get(:@printer))
+    # end
   end
   
   def test_we_cant_print_nonexistent_files
-    pj = Cups::PrintJob.new("/non/existent/file", "test_printer")
+    pj = Cups::PrintJob.new("/non/existent/file", "soft_class")
     
     assert_raises(RuntimeError) do
       pj.print

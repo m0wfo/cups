@@ -9,10 +9,24 @@ static int num_options;
 static cups_option_t *options;
 cups_dest_t *dests, *dest;
 
-static VALUE job_init(VALUE self, VALUE filename, VALUE printer) {
+static VALUE job_init(int argc, VALUE* argv, VALUE self) {
+  VALUE filename;
+  VALUE printer;
+  VALUE dest_list;
+  
+  rb_scan_args(argc, argv, "11", &filename, &printer);
+  
   rb_iv_set(self, "@filename", filename);
-  rb_iv_set(self, "@printer", printer);
-  // rb_raise(rb_eRuntimeError, "Printer or destination doesn't exist");
+  
+  if (NIL_P(printer)) {
+    const char *default_printer;
+    default_printer = cupsGetDefault();
+    VALUE def_p = rb_str_new2(default_printer);
+    rb_iv_set(self, "@printer", def_p);
+  } else {
+    rb_iv_set(self, "@printer", printer);
+  }
+  
   return self;
 }
 
@@ -129,7 +143,7 @@ void Init_cups() {
   printJobs = rb_define_class_under(rubyCups, "PrintJob", rb_cObject);
 
   // Cups::PrintJob Methods
-  rb_define_method(printJobs, "initialize", job_init, 2);
+  rb_define_method(printJobs, "initialize", job_init, -1);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
