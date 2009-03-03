@@ -41,7 +41,7 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_we_cant_print_nonexistent_files
-    pj = Cups::PrintJob.new("/non/existent/file", "soft_class")
+    pj = Cups::PrintJob.new("soft_class")
     
     assert_raise(RuntimeError) do
       pj.print

@@ -8,5 +8,4 @@ Gem::Specification.new do |s|
   s.extensions << "ext/extconf.rb"
   s.homepage = "http://cups.99th.st/"
   s.has_rdoc = false
-  s.extra_rdoc_files = ["README"]
 end

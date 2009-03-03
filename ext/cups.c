@@ -120,7 +120,7 @@ static VALUE cups_job_id(VALUE self) {
 
 // Get all jobs
 static VALUE cups_get_jobs(VALUE self, VALUE printer) {
-  VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat;
+  VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
   cups_job_t *jobs;
@@ -138,11 +138,13 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
     juser = rb_str_new2(jobs[i].user);
     jsize = INT2NUM(jobs[i].size);
     jformat = rb_str_new2(jobs[i].format);
+    jstate = INT2NUM(jobs[i].state);
     
     rb_ary_push(job_info_ary, jtitle);
     rb_ary_push(job_info_ary, juser);
     rb_ary_push(job_info_ary, jsize);
     rb_ary_push(job_info_ary, jformat);
+    rb_ary_push(job_info_ary, jstate);
     
     rb_hash_aset(job_list, jid, job_info_ary); // And push it all into job_list hash
   }
@@ -164,5 +166,5 @@ void Init_cups() {
   // Cups Module Methods
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
-  rb_define_singleton_method(rubyCups, "jobs_on", cups_get_jobs, 1);
+  rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
 }
