@@ -57,4 +57,8 @@ class CupsTest < Test::Unit::TestCase
     assert_equal pj.cancel, true
     assert pj.job_id.is_a?(Fixnum)
   end
+  
+  def test_all_jobs_returns_hash
+    assert Cups.all_jobs(Cups.default_printer).is_a?(Hash)
+  end
 end

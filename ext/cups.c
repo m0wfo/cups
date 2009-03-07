@@ -70,7 +70,7 @@ static VALUE cups_show_dests(VALUE self) {
   VALUE dest_list;
   int i;
   int num_dests = cupsGetDests(&dests); // Size of dest_list array
-  dest_list = rb_ary_new();
+  dest_list = rb_ary_new2(num_dests);
   
   for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
     VALUE destination = rb_str_new2(dest->name);
