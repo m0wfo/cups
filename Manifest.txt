@@ -1,6 +1,8 @@
-ext/cups.c
-ext/extconf.c
-Manifest.txt
 Rakefile
-README
+README.rdoc
+cups.gemspec
+ext/cups.c
+ext/extconf.rb
+Manifest.txt
 test/cups_test.rb
+test/sample.txt

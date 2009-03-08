@@ -61,4 +61,38 @@ class CupsTest < Test::Unit::TestCase
   def test_all_jobs_returns_hash
     assert Cups.all_jobs(Cups.default_printer).is_a?(Hash)
   end
+  
+  def test_dest_list_returns_array
+    assert Cups.show_destinations.is_a?(Array)
+  end
+  
+  def test_job_failed_boolean
+    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    pj.print
+    pj.cancel
+    assert !pj.failed?
+  end
+  
+  def test_returns_failure_string_on_cancellation
+    pj = Cups::PrintJob.new("#{Dir.pwd}/sample_blank.txt", "PDF_Printer")
+    pj.print
+    
+    assert pj.job_id == 0 # Failed jobs have an ID of zero
+    assert pj.failed?
+    
+    assert pj.error_reason.is_a?(String)
+  end
+  
+  def test_job_state_string
+    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    assert_nil pj.state # A job can't have a state if it hasn't been assigned a job_id yet
+    assert !pj.completed?
+    
+    pj.print
+    pj.cancel
+    
+    assert pj.state == "Completed"
+    assert pj.state.is_a?(String)
+    assert pj.completed?
+  end
 end

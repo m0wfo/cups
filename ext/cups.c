@@ -43,7 +43,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self) {
   return self;
 }
 
-// Submit a print job to the selected printer or class
+// Submit a print job to the selected printer or class. Returns true on success
 static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   int job_id;
   file = rb_iv_get(self, "@filename");
@@ -58,7 +58,7 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
     fclose(fp);
     job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it.
     rb_iv_set(self, "@job_id", INT2NUM(job_id));
-    return job_id;
+    return Qtrue;
   } else {
   // and if it doesn't...
     rb_raise(rb_eRuntimeError, "Couldn't find file");
@@ -66,6 +66,7 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   }
 }
 
+// Show all destinations on the default server
 static VALUE cups_show_dests(VALUE self) {
   VALUE dest_list;
   int i;
@@ -118,6 +119,127 @@ static VALUE cups_job_id(VALUE self) {
   }
 }
 
+// Did this job fail? Returns true or false
+static VALUE cups_job_failed(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+
+ if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
+   return Qfalse;
+ } else {
+   return Qtrue;
+ }
+}
+
+// Get the last human-readable error string
+static VALUE cups_get_error_reason(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+  
+  if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
+    return Qnil;
+  } else {
+    VALUE error_exp = rb_str_new2(cupsLastErrorString());
+    return error_exp;
+  }
+}
+
+// Get the last IPP error code
+static VALUE cups_get_error_code(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+  
+  if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
+    return Qnil;
+  } else {
+    VALUE ipp_error_code = INT2NUM(cupsLastError());
+    return ipp_error_code;
+  }
+}
+
+// Get state of current job
+static VALUE cups_get_job_state(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+  VALUE printer = rb_iv_get(self, "@printer");
+  VALUE jstate;
+  
+  int num_jobs;
+  cups_job_t *jobs;
+  ipp_jstate_t job_state = IPP_JOB_PENDING;
+  int i;
+  char *printer_arg = RSTRING_PTR(printer);
+  
+  if (NIL_P(job_id)) {
+    return Qnil;
+  } else {
+    num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
+    job_state = IPP_JOB_COMPLETED;
+    
+    for (i = 0; i < num_jobs; i ++) {
+      if (jobs[i].id == NUM2INT(job_id)) {
+        job_state = jobs[i].state;
+        break;
+      }
+
+      // Free job array
+      cupsFreeJobs(num_jobs, jobs);
+      
+      switch (job_state) {
+        case IPP_JOB_PENDING :
+          jstate = rb_str_new2("Pending...");
+        case IPP_JOB_HELD :
+          jstate = rb_str_new2("Held");
+        case IPP_JOB_PROCESSING :
+          jstate = rb_str_new2("Processing...");
+        case IPP_JOB_STOPPED :
+          jstate = rb_str_new2("Stopped");
+        case IPP_JOB_CANCELED :
+          jstate = rb_str_new2("Cancelled");
+        case IPP_JOB_ABORTED :
+          jstate = rb_str_new2("Aborted");
+        case IPP_JOB_COMPLETED :
+          jstate = rb_str_new2("Completed");
+      }
+
+      return jstate;
+    }
+  }
+}
+
+// Has the current job completed?
+static VALUE cups_job_completed(VALUE self) {
+  VALUE job_id = rb_iv_get(self, "@job_id");
+  VALUE printer = rb_iv_get(self, "@printer");
+  VALUE jstate;
+
+  int num_jobs;
+  cups_job_t *jobs;
+  ipp_jstate_t job_state = IPP_JOB_PENDING;
+  int i;
+  char *printer_arg = RSTRING_PTR(printer);
+
+  if (NIL_P(job_id)) {
+    return Qfalse;
+  } else {
+    num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
+    job_state = IPP_JOB_COMPLETED;
+
+    for (i = 0; i < num_jobs; i ++) {
+      if (jobs[i].id == NUM2INT(job_id)) {
+        job_state = jobs[i].state;
+        break;
+      }
+      
+      // Free job array
+      cupsFreeJobs(num_jobs, jobs);
+      
+      if (job_state == IPP_JOB_COMPLETED) {
+        return Qtrue;
+      } else {
+        return Qfalse;
+      }
+      
+    }
+  }  
+}
+
 // Get all jobs
 static VALUE cups_get_jobs(VALUE self, VALUE printer) {
   VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat, jstate;
@@ -138,7 +260,24 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
     juser = rb_str_new2(jobs[i].user);
     jsize = INT2NUM(jobs[i].size);
     jformat = rb_str_new2(jobs[i].format);
-    jstate = INT2NUM(jobs[i].state);
+    
+    // Let's elaborate on that job state...
+    switch (jobs[i].state) {
+      case IPP_JOB_PENDING :
+        jstate = rb_str_new2("Pending...");
+      case IPP_JOB_HELD :
+        jstate = rb_str_new2("Held");
+      case IPP_JOB_PROCESSING :
+        jstate = rb_str_new2("Processing...");
+      case IPP_JOB_STOPPED :
+        jstate = rb_str_new2("Stopped");
+      case IPP_JOB_CANCELED :
+        jstate = rb_str_new2("Cancelled");
+      case IPP_JOB_ABORTED :
+        jstate = rb_str_new2("Aborted");
+      case IPP_JOB_COMPLETED :
+        jstate = rb_str_new2("Completed");
+    }
     
     rb_ary_push(job_info_ary, jtitle);
     rb_ary_push(job_info_ary, juser);
@@ -148,6 +287,10 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
     
     rb_hash_aset(job_list, jid, job_info_ary); // And push it all into job_list hash
   }
+
+  // Free job array
+  cupsFreeJobs(num_jobs, jobs);
+
   return job_list;
 }
 
@@ -162,6 +305,11 @@ void Init_cups() {
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
   rb_define_method(printJobs, "job_id", cups_job_id, 0);
+  rb_define_method(printJobs, "state", cups_get_job_state, 0);
+  rb_define_method(printJobs, "completed?", cups_job_completed, 0);
+  rb_define_method(printJobs, "failed?", cups_job_failed, 0);
+  rb_define_method(printJobs, "error_reason", cups_get_error_reason, 0);
+  rb_define_method(printJobs, "error_code", cups_get_error_code, 0);
 
   // Cups Module Methods
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
