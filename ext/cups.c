@@ -170,7 +170,7 @@ static VALUE cups_get_job_state(VALUE self) {
     return Qnil;
   } else {
     num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    job_state = IPP_JOB_COMPLETED;
+    // job_state = IPP_JOB_COMPLETED;
     
     for (i = 0; i < num_jobs; i ++) {
       if (jobs[i].id == NUM2INT(job_id)) {
