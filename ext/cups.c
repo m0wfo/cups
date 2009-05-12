@@ -4,7 +4,14 @@ static int num_options;
 static cups_option_t *options;
 cups_dest_t *dests, *dest;
 
-static VALUE job_init(int argc, VALUE* argv, VALUE self) {
+/*
+* call-seq:
+*   PrintJob.new(filename, printer=nil)
+*
+* Initializes a new PrintJob object. If no target printer/class is specified, the default is chosen.
+*/
+static VALUE job_init(int argc, VALUE* argv, VALUE self)
+{
   VALUE filename, printer, dest_list;
   
   rb_scan_args(argc, argv, "11", &filename, &printer);
@@ -38,8 +45,14 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self) {
   return self;
 }
 
-// Submit a print job to the selected printer or class. Returns true on success
-static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
+/*
+* call-seq:
+*   print_job.print -> Fixnum
+*
+* Submit a print job to the selected printer or class. Returns true on success.
+*/
+static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
+{
   int job_id;
   file = rb_iv_get(self, "@filename");
   printer = rb_iv_get(self, "@printer");
@@ -61,8 +74,11 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer) {
   }
 }
 
-// Show all destinations on the default server
-static VALUE cups_show_dests(VALUE self) {
+/*
+* Show all destinations on the default server
+*/
+static VALUE cups_show_dests(VALUE self)
+{
   VALUE dest_list;
   int i;
   int num_dests = cupsGetDests(&dests); // Size of dest_list array
@@ -75,8 +91,11 @@ static VALUE cups_show_dests(VALUE self) {
   return dest_list;
 }
 
-// Get default printer or class. Returns a string or false if there is no default
-static VALUE cups_get_default(VALUE self) {
+/*
+* Get default printer or class. Returns a string or false if there is no default
+*/
+static VALUE cups_get_default(VALUE self)
+{
   const char *default_printer;
   default_printer = cupsGetDefault();
 
@@ -86,8 +105,14 @@ static VALUE cups_get_default(VALUE self) {
   }
 }
 
-// Cancel the current job. Returns true if successful, false otherwise.
-static VALUE cups_cancel(VALUE self) {
+/*
+* call-seq:
+*   print_job.cancel -> true or false
+*
+* Cancel the current job. Returns true if successful, false otherwise.
+*/
+static VALUE cups_cancel(VALUE self)
+{
   VALUE printer, job_id;
   printer = rb_iv_get(self, "@printer");
   job_id = rb_iv_get(self, "@job_id");
@@ -103,8 +128,14 @@ static VALUE cups_cancel(VALUE self) {
   }
 }
 
-// Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
-static VALUE cups_job_id(VALUE self) {
+/*
+* call-seq:
+*   print_job.job_id -> Fixnum or nil
+*
+* Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
+*/
+static VALUE cups_job_id(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
   
   if (NIL_P(job_id)) {
@@ -114,8 +145,14 @@ static VALUE cups_job_id(VALUE self) {
   }
 }
 
-// Did this job fail? Returns true or false
-static VALUE cups_job_failed(VALUE self) {
+/*
+* call-seq:
+*   print_job.failed? -> true or false
+*
+* Did this job fail?
+*/
+static VALUE cups_job_failed(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
 
  if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
@@ -125,8 +162,14 @@ static VALUE cups_job_failed(VALUE self) {
  }
 }
 
-// Get the last human-readable error string
-static VALUE cups_get_error_reason(VALUE self) {
+/*
+* call-seq:
+*   print_job.error_reason -> String
+*
+* Get the last human-readable error string
+*/
+static VALUE cups_get_error_reason(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
   
   if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
@@ -137,8 +180,14 @@ static VALUE cups_get_error_reason(VALUE self) {
   }
 }
 
-// Get the last IPP error code
-static VALUE cups_get_error_code(VALUE self) {
+/*
+* call-seq:
+*   print_job.error_code -> Fixnum
+*
+* Get the last IPP error code.
+*/
+static VALUE cups_get_error_code(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
   
   if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
@@ -149,8 +198,14 @@ static VALUE cups_get_error_code(VALUE self) {
   }
 }
 
-// Get state of current job
-static VALUE cups_get_job_state(VALUE self) {
+/*
+* call-seq:
+*   print_job.state -> String
+*
+* Get human-readable state of current job.
+*/
+static VALUE cups_get_job_state(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
   VALUE printer = rb_iv_get(self, "@printer");
   VALUE jstate;
@@ -197,8 +252,14 @@ static VALUE cups_get_job_state(VALUE self) {
   }
 }
 
-// Has the current job completed?
-static VALUE cups_job_completed(VALUE self) {
+/*
+* call-seq:
+*   print_job.completed? -> true or false
+*
+* Has the job completed?
+*/
+static VALUE cups_job_completed(VALUE self)
+{
   VALUE job_id = rb_iv_get(self, "@job_id");
   VALUE printer = rb_iv_get(self, "@printer");
   VALUE jstate;
@@ -234,8 +295,17 @@ static VALUE cups_job_completed(VALUE self) {
   }  
 }
 
-// Get all jobs
-static VALUE cups_get_jobs(VALUE self, VALUE printer) {
+/*
+* call-seq:
+*   Cups.all_jobs -> Hash
+*
+* Get all jobs from default CUPS server. Returned hash keys are CUPS job ids, and the values are arrays of
+* job info in the following order:
+*
+* [title,submitted_by,size,format,state]
+*/
+static VALUE cups_get_jobs(VALUE self, VALUE printer)
+{
   VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
@@ -291,6 +361,12 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
 // static VALUE cups_get_current_locale(VALUE self) {
 //   return Qtrue;
 // }
+
+/*
+*
+* Encapsulate the writing and reading of the configuration
+* file. ...
+*/
 
 VALUE rubyCups, printJobs;
 
