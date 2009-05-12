@@ -1,6 +1,5 @@
 require "cups"
 require "test/unit"
-require "flexmock/test_unit"
 
 # The tests which don't make use of mocking go on the operating assumption that you have
 # the CUPS command line utilities installed and in your $PATH
@@ -51,7 +50,7 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_print_job_cancellation
-    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    pj = Cups::PrintJob.new(sample, "soft_class")
     pj.print
     assert_not_nil pj.job_id
     assert_equal pj.cancel, true
@@ -67,14 +66,14 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_job_failed_boolean
-    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    pj = Cups::PrintJob.new(sample, "soft_class")
     pj.print
     pj.cancel
     assert !pj.failed?
   end
   
   def test_returns_failure_string_on_cancellation
-    pj = Cups::PrintJob.new("#{Dir.pwd}/sample_blank.txt", "PDF_Printer")
+    pj = Cups::PrintJob.new(blank_sample, "PDF_Printer")
     pj.print
     
     assert pj.job_id == 0 # Failed jobs have an ID of zero
@@ -84,15 +83,24 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_job_state_string
-    pj = Cups::PrintJob.new("#{Dir.pwd}/sample.txt", "soft_class")
+    pj = Cups::PrintJob.new(sample, "soft_class")
     assert_nil pj.state # A job can't have a state if it hasn't been assigned a job_id yet
     assert !pj.completed?
-    
+
     pj.print
     pj.cancel
-    
     assert pj.state.is_a?(String)
     # assert pj.state == "Cancelled"
     # assert !pj.completed?
+  end
+  
+  private
+  
+  def sample
+    "#{Dir.pwd}/sample.txt"
+  end
+  
+  def blank_sample
+    "#{Dir.pwd}/sample_blank.txt"
   end
 end

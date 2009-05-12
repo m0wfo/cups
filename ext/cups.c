@@ -1,9 +1,4 @@
-#include <cups/cups.h>
-#include <ruby/ruby.h>
-
-#ifndef MAXOPTS
-  #define MAXOPTS 100
-#endif
+#include <cups.h>
 
 static int num_options;
 static cups_option_t *options;
@@ -170,7 +165,6 @@ static VALUE cups_get_job_state(VALUE self) {
     return Qnil;
   } else {
     num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    // job_state = IPP_JOB_COMPLETED;
     
     for (i = 0; i < num_jobs; i ++) {
       if (jobs[i].id == NUM2INT(job_id)) {
@@ -219,7 +213,7 @@ static VALUE cups_job_completed(VALUE self) {
     return Qfalse;
   } else {
     num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    job_state = IPP_JOB_COMPLETED;
+    // job_state = IPP_JOB_COMPLETED;
 
     for (i = 0; i < num_jobs; i ++) {
       if (jobs[i].id == NUM2INT(job_id)) {
@@ -293,6 +287,10 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
 
   return job_list;
 }
+
+// static VALUE cups_get_current_locale(VALUE self) {
+//   return Qtrue;
+// }
 
 VALUE rubyCups, printJobs;
 
