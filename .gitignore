@@ -3,6 +3,7 @@ Makefile
 *.bundle
 *.so
 *.out
+*.log
 pkg
 doc
 .DS_Store
