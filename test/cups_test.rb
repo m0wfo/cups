@@ -88,10 +88,10 @@ class CupsTest < Test::Unit::TestCase
     assert !pj.completed?
 
     pj.print
+    assert pj.state == "Pending..."
+
     pj.cancel
-    assert pj.state.is_a?(String)
-    # assert pj.state == "Cancelled"
-    # assert !pj.completed?
+    assert !pj.completed?
   end
   
   private
