@@ -265,16 +265,22 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer) {
     switch (jobs[i].state) {
       case IPP_JOB_PENDING :
         jstate = rb_str_new2("Pending...");
+        break;
       case IPP_JOB_HELD :
         jstate = rb_str_new2("Held");
+        break;
       case IPP_JOB_PROCESSING :
         jstate = rb_str_new2("Processing...");
+        break;
       case IPP_JOB_STOPPED :
         jstate = rb_str_new2("Stopped");
+        break;
       case IPP_JOB_CANCELED :
         jstate = rb_str_new2("Cancelled");
+        break;
       case IPP_JOB_ABORTED :
         jstate = rb_str_new2("Aborted");
+        break;
       case IPP_JOB_COMPLETED :
         jstate = rb_str_new2("Completed");
     }
