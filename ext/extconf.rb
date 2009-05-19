@@ -5,8 +5,8 @@ unless have_library("cups") && find_executable("cups-config")
   exit
 end
 
-cups_cflags = `cups-config --cflags`.chomp
-cups_libs = `cups-config --libs`.chomp
+cups_cflags = `cups-config --cflags`.chomp || ""
+cups_libs = `cups-config --libs`.chomp || ""
 
 with_cflags(cups_cflags) {
   with_ldflags(cups_libs) {
