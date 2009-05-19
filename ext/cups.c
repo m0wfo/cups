@@ -373,6 +373,13 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   return job_list;
 }
 
+/*
+ * call-seq:
+ *   Cups.options_for(name) -> Hash or nil
+ *
+ * Get all options from CUPS server with name. Returns a hash with key/value pairs
+ * based on server options, or nil if no server with name.
+ */
 static VALUE cups_get_options(VALUE self, VALUE printer)
 {
   VALUE options_list;
@@ -430,5 +437,5 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
-  rb_define_singleton_method(rubyCups, "destination_options", cups_get_options, 1);
+  rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
 }

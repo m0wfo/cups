@@ -66,11 +66,11 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_dest_options_returns_hash_if_real
-    assert Cups.destination_options("PDF_Printer").is_a?(Hash)
+    assert Cups.options_for("PDF_Printer").is_a?(Hash)
   end
 
   def test_dest_options_returns_nil_if_not_real
-    assert_nil Cups.destination_options("bollocks_printer")
+    assert_nil Cups.options_for("bollocks_printer")
   end
   
   def test_job_failed_boolean
