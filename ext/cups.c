@@ -160,46 +160,49 @@ static VALUE cups_get_job_state(VALUE self) {
   ipp_jstate_t job_state = IPP_JOB_PENDING;
   int i;
   char *printer_arg = RSTRING_PTR(printer);
-  
+ 
   if (NIL_P(job_id)) {
     return Qnil;
   } else {
     num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    
+
     for (i = 0; i < num_jobs; i ++) {
       if (jobs[i].id == NUM2INT(job_id)) {
         job_state = jobs[i].state;
         break;
       }
-
-      // Free job array
-      cupsFreeJobs(num_jobs, jobs);
-      
-      switch (job_state) {
-        case IPP_JOB_PENDING :
-          jstate = rb_str_new2("Pending...");
-          break;
-        case IPP_JOB_HELD :
-          jstate = rb_str_new2("Held");
-          break;
-        case IPP_JOB_PROCESSING :
-          jstate = rb_str_new2("Processing...");
-          break;
-        case IPP_JOB_STOPPED :
-          jstate = rb_str_new2("Stopped");
-          break;
-        case IPP_JOB_CANCELED :
-          jstate = rb_str_new2("Cancelled");
-          break;
-        case IPP_JOB_ABORTED :
-          jstate = rb_str_new2("Aborted");
-          break;
-        case IPP_JOB_COMPLETED :
-          jstate = rb_str_new2("Completed");
-      }
-
-      return jstate;
     }
+
+     // Free job array
+     cupsFreeJobs(num_jobs, jobs);
+ 
+    switch (job_state) {
+      case IPP_JOB_PENDING :
+        jstate = rb_str_new2("Pending...");
+        break;
+      case IPP_JOB_HELD :
+        jstate = rb_str_new2("Held");
+        break;
+      case IPP_JOB_PROCESSING :
+        jstate = rb_str_new2("Processing...");
+        break;
+      case IPP_JOB_STOPPED :
+        jstate = rb_str_new2("Stopped");
+        break;
+      case IPP_JOB_CANCELED :
+        jstate = rb_str_new2("Cancelled");
+        break;
+      case IPP_JOB_ABORTED :
+        jstate = rb_str_new2("Aborted");
+        break;
+      case IPP_JOB_COMPLETED :
+		jstate = rb_str_new2("Completed");
+        break;
+      default:
+		jstate = rb_str_new2("Unknown Job Code...");
+    }
+
+    return jstate;
   }
 }
 
