@@ -11,7 +11,7 @@ VALUE rubyCups, printJobs;
 *   PrintJob.new(filename, printer=nil)
 *
 * Initializes a new PrintJob object. If no target printer/class is specified, the default is chosen.
-* Note the file specified does not have to exist until print is called.
+* Note the specified file does not have to exist until print is called.
 */
 static VALUE job_init(int argc, VALUE* argv, VALUE self)
 {
@@ -70,6 +70,9 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
 }
 
 /*
+* call-seq:
+*   Cups.show_destinations -> Array
+*
 * Show all destinations on the default server
 */
 static VALUE cups_show_dests(VALUE self)
@@ -87,6 +90,9 @@ static VALUE cups_show_dests(VALUE self)
 }
 
 /*
+* call-seq:
+*   Cups.default_printer -> String or nil
+*
 * Get default printer or class. Returns a string or false if there is no default
 */
 static VALUE cups_get_default(VALUE self)
@@ -367,9 +373,6 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 }
 
 /*
-*
-* Encapsulate the writing and reading of the configuration
-* file. ...
 */
 
 void Init_cups() {
