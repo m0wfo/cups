@@ -94,6 +94,13 @@ class CupsTest < Test::Unit::TestCase
     assert !pj.completed?
   end
   
+  def test_print_job_attributes
+    pj = Cups::PrintJob.new(sample)
+    [:printer, :filename].each do |attr|
+      assert pj.respond_to?(attr)
+    end
+  end
+
   private
   
   def sample

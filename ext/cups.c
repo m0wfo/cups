@@ -23,6 +23,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
     const char *default_printer;
     default_printer = cupsGetDefault();
     VALUE def_p = rb_str_new2(default_printer);
+
     rb_iv_set(self, "@printer", def_p);
   } else {
     // Check that the destination specified actually exists
@@ -303,10 +304,11 @@ static VALUE cups_job_completed(VALUE self)
 
 /*
 * call-seq:
-*   Cups.all_jobs -> Hash
+*   Cups.all_jobs(printer) -> Hash
 *
-* Get all jobs from default CUPS server. Returned hash keys are CUPS job ids, and the values are arrays of
-* job info in the following order:
+* Get all jobs from default CUPS server. Takes a single printer/class string argument.
+* Returned hash keys are CUPS job ids, and the values are arrays of job info in the
+* following order:
 *
 * [title,submitted_by,size,format,state]
 */
@@ -370,10 +372,6 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   return job_list;
 }
 
-// static VALUE cups_get_current_locale(VALUE self) {
-//   return Qtrue;
-// }
-
 /*
 *
 * Encapsulate the writing and reading of the configuration
@@ -385,6 +383,10 @@ VALUE rubyCups, printJobs;
 void Init_cups() {
   rubyCups = rb_define_module("Cups");
   printJobs = rb_define_class_under(rubyCups, "PrintJob", rb_cObject);
+
+  // Cups::PrintJob Attributes
+  rb_define_attr(printJobs, "printer", 1, 0);
+  rb_define_attr(printJobs, "filename", 1, 0);
 
   // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, -1);
