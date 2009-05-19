@@ -1,0 +1,34 @@
+== Version 0.0.5
+
+2009-05-18: Job state bug fixes by Brian Butz
+
+2009-05-13: Proper RDoc
+
+2009-05-12: Rubyforge project created
+
+* Created holding page [http://cups.rubyforge.org/]
+
+== Version 0.0.4
+
+2009-03-03: Tweaks to cups.c
+
+* If no printer is specified for a PrintJob, it falls back to the default
+* An error now gets raised if a non-existent printer/print class is specified
+* More tests
+
+== Version 0.0.3
+
+2009-02-26: Packaging tweaks
+
+* Warns if libcups isn't installed
+* Started documenting methods
+
+== Version 0.0.2
+
+2009-02-26
+
+* Started extending test coverage
+
+== Version 0.0.1
+
+2009-02-22: Initial release
