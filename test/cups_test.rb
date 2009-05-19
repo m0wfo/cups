@@ -27,7 +27,7 @@ class CupsTest < Test::Unit::TestCase
     assert_nothing_raised do
       pj = Cups::PrintJob.new("/non/existent/file")
 
-      assert_equal pj.instance_variable_get(:@printer), Cups.default_printer
+      assert_equal Cups.default_printer, pj.instance_variable_get(:@printer)
     end
   end
   

@@ -3,46 +3,40 @@
 static int num_options;
 static cups_option_t *options;
 cups_dest_t *dests, *dest;
+VALUE rubyCups, printJobs;
+
 
 /*
 * call-seq:
 *   PrintJob.new(filename, printer=nil)
 *
 * Initializes a new PrintJob object. If no target printer/class is specified, the default is chosen.
+* Note the file specified does not have to exist until print is called.
 */
 static VALUE job_init(int argc, VALUE* argv, VALUE self)
 {
-  VALUE filename, printer, dest_list;
+  VALUE filename, printer;
   
   rb_scan_args(argc, argv, "11", &filename, &printer);
   
   rb_iv_set(self, "@filename", filename);
   
   if (NIL_P(printer)) {
-    // Fall back to default printer
-    const char *default_printer;
-    default_printer = cupsGetDefault();
-    VALUE def_p = rb_str_new2(default_printer);
 
+    // Fall back to default printer
+    VALUE def_p = rb_funcall(rubyCups, rb_intern("default_printer"), 0);
     rb_iv_set(self, "@printer", def_p);
+    
   } else {
-    // Check that the destination specified actually exists
-    int i;
-    int num_dests = cupsGetDests(&dests); // Size of dest_list array
-    dest_list = rb_ary_new();
-    
-    for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
-      VALUE destination = rb_str_new2(dest->name);
-      rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
-    }
-    
+    // First call Cups#show_destinations
+    VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
+    // Then check the printer arg is included in the returned array...
     if (rb_ary_includes(dest_list, printer)) {
       rb_iv_set(self, "@printer", printer);
     } else {
       rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
     }
   }
-  
   return self;
 }
 
@@ -377,8 +371,6 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 * Encapsulate the writing and reading of the configuration
 * file. ...
 */
-
-VALUE rubyCups, printJobs;
 
 void Init_cups() {
   rubyCups = rb_define_module("Cups");
