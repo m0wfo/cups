@@ -65,6 +65,14 @@ class CupsTest < Test::Unit::TestCase
     assert Cups.show_destinations.is_a?(Array)
   end
   
+  def test_dest_options_returns_hash_if_real
+    assert Cups.destination_options("PDF_Printer").is_a?(Hash)
+  end
+
+  def test_dest_options_returns_nil_if_not_real
+    assert_nil Cups.destination_options("bollocks_printer")
+  end
+  
   def test_job_failed_boolean
     pj = Cups::PrintJob.new(sample, "soft_class")
     pj.print
@@ -91,6 +99,7 @@ class CupsTest < Test::Unit::TestCase
     assert pj.state == "Pending..."
 
     pj.cancel
+    assert pj.state == "Cancelled"
     assert !pj.completed?
   end
   

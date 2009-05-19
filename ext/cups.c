@@ -373,6 +373,32 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   return job_list;
 }
 
+static VALUE cups_get_options(VALUE self, VALUE printer)
+{
+  VALUE options_list;
+  int i;
+  char *printer_arg = RSTRING_PTR(printer);
+
+  options_list = rb_hash_new();
+
+  cups_dest_t *dests;
+  int num_dests = cupsGetDests(&dests);
+  cups_dest_t *dest = cupsGetDest(printer_arg, NULL, num_dests, dests);
+
+  if (dest == NULL) {
+    cupsFreeDests(num_dests, dests);
+    return Qnil;
+  } else {
+    for(i =0; i< dest->num_options; i++) {
+      rb_hash_aset(options_list, rb_str_new2(dest->options[i].name), rb_str_new2(dest->options[i].value));
+    }
+
+    cupsFreeDests(num_dests, dests);
+    return options_list;
+  }
+
+}
+
 // static VALUE cups_get_current_locale(VALUE self) {
 //   return Qtrue;
 // }
@@ -404,4 +430,5 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
+  rb_define_singleton_method(rubyCups, "destination_options", cups_get_options, 1);
 }
