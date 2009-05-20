@@ -96,7 +96,7 @@ class CupsTest < Test::Unit::TestCase
   
   def test_print_job_attributes
     pj = Cups::PrintJob.new(sample)
-    [:printer, :filename].each do |attr|
+    [:printer, :filename, :job_id].each do |attr|
       assert pj.respond_to?(attr)
     end
   end
