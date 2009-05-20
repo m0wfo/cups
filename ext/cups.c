@@ -131,23 +131,6 @@ static VALUE cups_cancel(VALUE self)
 
 /*
 * call-seq:
-*   print_job.job_id -> Fixnum or nil
-*
-* Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
-*/
-static VALUE cups_job_id(VALUE self)
-{
-  VALUE job_id = rb_iv_get(self, "@job_id");
-  
-  if (NIL_P(job_id)) {
-    return Qnil;
-  } else {
-    return job_id; // Return job id if there is one
-  }
-}
-
-/*
-* call-seq:
 *   print_job.failed? -> true or false
 *
 * Did this job fail?
@@ -382,12 +365,12 @@ void Init_cups() {
   // Cups::PrintJob Attributes
   rb_define_attr(printJobs, "printer", 1, 0);
   rb_define_attr(printJobs, "filename", 1, 0);
+  rb_define_attr(printJobs, "job_id", 1, 0);
 
   // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, -1);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
-  rb_define_method(printJobs, "job_id", cups_job_id, 0);
   rb_define_method(printJobs, "state", cups_get_job_state, 0);
   rb_define_method(printJobs, "completed?", cups_job_completed, 0);
   rb_define_method(printJobs, "failed?", cups_job_failed, 0);
