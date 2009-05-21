@@ -1,4 +1,4 @@
-#include <cups.h>
+#include <ruby_cups.h>
 
 static int num_options;
 static cups_option_t *options;
@@ -214,6 +214,8 @@ static VALUE cups_get_job_state(VALUE self)
       // Free job array
       cupsFreeJobs(num_jobs, jobs);
       
+      rb_str_new2("ello");
+
       switch (job_state) {
         case IPP_JOB_PENDING :
           jstate = rb_str_new2("Pending...");
@@ -354,6 +356,42 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 
   return job_list;
 }
+
+// TODO
+// int ipp_state_to_string(int state)
+// {
+//   // char *jstate;
+//   switch (state) {
+//     case IPP_JOB_PENDING :
+//       // jstate = rb_str_new2("Pending...");
+//       // char jstate[] = "Pending...";
+//       break;
+//     case IPP_JOB_HELD :
+//       // jstate = rb_str_new2("Held");
+//       // char jstate[] = "Held";
+//       break;
+//     case IPP_JOB_PROCESSING :
+//       // jstate = rb_str_new2("Processing...");
+//       // char jstate[] = "Processing...";
+//       break;
+//     case IPP_JOB_STOPPED :
+//       // jstate = rb_str_new2("Stopped");
+//       // char jstate[] = "Stopped";
+//       break;
+//     case IPP_JOB_CANCELED :
+//       // jstate = rb_str_new2("Cancelled");
+//       // char jstate[] = "Cancelled";
+//       break;
+//     case IPP_JOB_ABORTED :
+//       // jstate = rb_str_new2("Aborted");
+//       // char jstate[] = "Aborted";
+//       break;
+//     case IPP_JOB_COMPLETED :
+//       // jstate = rb_str_new2("Completed");
+//       break;
+//   }
+//   return 0;
+// }
 
 /*
 */
