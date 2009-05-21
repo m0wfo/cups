@@ -1,5 +1,9 @@
 #include <cups/cups.h>
-#include <ruby/ruby.h>
+#ifdef __APPLE__
+  #include <ruby/ruby.h>
+#else
+  #include <ruby.h>
+#endif
 
 #ifndef MAXOPTS
   #define MAXOPTS 100
