@@ -1,47 +1,42 @@
-#include <cups.h>
+#include <ruby_cups.h>
 
 static int num_options;
 static cups_option_t *options;
 cups_dest_t *dests, *dest;
+VALUE rubyCups, printJobs;
+
 
 /*
 * call-seq:
 *   PrintJob.new(filename, printer=nil)
 *
 * Initializes a new PrintJob object. If no target printer/class is specified, the default is chosen.
+* Note the specified file does not have to exist until print is called.
 */
 static VALUE job_init(int argc, VALUE* argv, VALUE self)
 {
-  VALUE filename, printer, dest_list;
+  VALUE filename, printer;
   
   rb_scan_args(argc, argv, "11", &filename, &printer);
   
   rb_iv_set(self, "@filename", filename);
   
   if (NIL_P(printer)) {
+
     // Fall back to default printer
-    const char *default_printer;
-    default_printer = cupsGetDefault();
-    VALUE def_p = rb_str_new2(default_printer);
+    VALUE def_p = rb_funcall(rubyCups, rb_intern("default_printer"), 0);
     rb_iv_set(self, "@printer", def_p);
+    
   } else {
-    // Check that the destination specified actually exists
-    int i;
-    int num_dests = cupsGetDests(&dests); // Size of dest_list array
-    dest_list = rb_ary_new();
-    
-    for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
-      VALUE destination = rb_str_new2(dest->name);
-      rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
-    }
-    
+    // First call Cups#show_destinations
+    VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
+    // Then check the printer arg is included in the returned array...
     if (rb_ary_includes(dest_list, printer)) {
       rb_iv_set(self, "@printer", printer);
     } else {
       rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
     }
   }
-  
   return self;
 }
 
@@ -75,6 +70,9 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
 }
 
 /*
+* call-seq:
+*   Cups.show_destinations -> Array
+*
 * Show all destinations on the default server
 */
 static VALUE cups_show_dests(VALUE self)
@@ -92,6 +90,9 @@ static VALUE cups_show_dests(VALUE self)
 }
 
 /*
+* call-seq:
+*   Cups.default_printer -> String or nil
+*
 * Get default printer or class. Returns a string or false if there is no default
 */
 static VALUE cups_get_default(VALUE self)
@@ -125,23 +126,6 @@ static VALUE cups_cancel(VALUE self)
     int cancellation;
     cancellation = cupsCancelJob(target, job);
     return Qtrue;
-  }
-}
-
-/*
-* call-seq:
-*   print_job.job_id -> Fixnum or nil
-*
-* Convenience method for CUPS job id. Returns nil if job hasn't been submitted.
-*/
-static VALUE cups_job_id(VALUE self)
-{
-  VALUE job_id = rb_iv_get(self, "@job_id");
-  
-  if (NIL_P(job_id)) {
-    return Qnil;
-  } else {
-    return job_id; // Return job id if there is one
   }
 }
 
@@ -306,10 +290,11 @@ static VALUE cups_job_completed(VALUE self)
 
 /*
 * call-seq:
-*   Cups.all_jobs -> Hash
+*   Cups.all_jobs(printer) -> Hash
 *
-* Get all jobs from default CUPS server. Returned hash keys are CUPS job ids, and the values are arrays of
-* job info in the following order:
+* Get all jobs from default CUPS server. Takes a single printer/class string argument.
+* Returned hash keys are CUPS job ids, and the values are arrays of job info in the
+* following order:
 *
 * [title,submitted_by,size,format,state]
 */
@@ -406,27 +391,58 @@ static VALUE cups_get_options(VALUE self, VALUE printer)
 
 }
 
-// static VALUE cups_get_current_locale(VALUE self) {
-//   return Qtrue;
+// TODO
+// int ipp_state_to_string(int state)
+// {
+//   // char *jstate;
+//   switch (state) {
+//     case IPP_JOB_PENDING :
+//       // jstate = rb_str_new2("Pending...");
+//       // char jstate[] = "Pending...";
+//       break;
+//     case IPP_JOB_HELD :
+//       // jstate = rb_str_new2("Held");
+//       // char jstate[] = "Held";
+//       break;
+//     case IPP_JOB_PROCESSING :
+//       // jstate = rb_str_new2("Processing...");
+//       // char jstate[] = "Processing...";
+//       break;
+//     case IPP_JOB_STOPPED :
+//       // jstate = rb_str_new2("Stopped");
+//       // char jstate[] = "Stopped";
+//       break;
+//     case IPP_JOB_CANCELED :
+//       // jstate = rb_str_new2("Cancelled");
+//       // char jstate[] = "Cancelled";
+//       break;
+//     case IPP_JOB_ABORTED :
+//       // jstate = rb_str_new2("Aborted");
+//       // char jstate[] = "Aborted";
+//       break;
+//     case IPP_JOB_COMPLETED :
+//       // jstate = rb_str_new2("Completed");
+//       break;
+//   }
+//   return 0;
 // }
 
 /*
-*
-* Encapsulate the writing and reading of the configuration
-* file. ...
 */
-
-VALUE rubyCups, printJobs;
 
 void Init_cups() {
   rubyCups = rb_define_module("Cups");
   printJobs = rb_define_class_under(rubyCups, "PrintJob", rb_cObject);
 
+  // Cups::PrintJob Attributes
+  rb_define_attr(printJobs, "printer", 1, 0);
+  rb_define_attr(printJobs, "filename", 1, 0);
+  rb_define_attr(printJobs, "job_id", 1, 0);
+
   // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, -1);
   rb_define_method(printJobs, "print", cups_print, 0);
   rb_define_method(printJobs, "cancel", cups_cancel, 0);
-  rb_define_method(printJobs, "job_id", cups_job_id, 0);
   rb_define_method(printJobs, "state", cups_get_job_state, 0);
   rb_define_method(printJobs, "completed?", cups_job_completed, 0);
   rb_define_method(printJobs, "failed?", cups_job_failed, 0);

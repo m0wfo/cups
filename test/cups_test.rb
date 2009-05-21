@@ -27,7 +27,7 @@ class CupsTest < Test::Unit::TestCase
     assert_nothing_raised do
       pj = Cups::PrintJob.new("/non/existent/file")
 
-      assert_equal pj.instance_variable_get(:@printer), Cups.default_printer
+      assert_equal Cups.default_printer, pj.instance_variable_get(:@printer)
     end
   end
   
@@ -103,6 +103,13 @@ class CupsTest < Test::Unit::TestCase
     assert !pj.completed?
   end
   
+  def test_print_job_attributes
+    pj = Cups::PrintJob.new(sample)
+    [:printer, :filename, :job_id].each do |attr|
+      assert pj.respond_to?(attr)
+    end
+  end
+
   private
   
   def sample
