@@ -96,7 +96,6 @@ class CupsTest < Test::Unit::TestCase
     assert !pj.completed?
 
     pj.print
-    assert pj.state == "Pending..."
 
     pj.cancel
     assert pj.state == "Cancelled"
