@@ -300,7 +300,7 @@ static VALUE cups_job_completed(VALUE self)
 */
 static VALUE cups_get_jobs(VALUE self, VALUE printer)
 {
-  VALUE job_list, job_info_ary, jid, jtitle, juser, jsize, jformat, jstate;
+  VALUE job_list, job_info_hash, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
   cups_job_t *jobs;
@@ -312,7 +312,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   job_list = rb_hash_new();
   
   for (i = 0; i < num_jobs; i ++) { // Construct a hash of individual job info
-    job_info_ary = rb_ary_new();
+    job_info_hash = rb_hash_new();
     jid = INT2NUM(jobs[i].id);
     jtitle = rb_str_new2(jobs[i].title);
     juser = rb_str_new2(jobs[i].user);
@@ -343,13 +343,13 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
         jstate = rb_str_new2("Completed");
     }
     
-    rb_ary_push(job_info_ary, jtitle);
-    rb_ary_push(job_info_ary, juser);
-    rb_ary_push(job_info_ary, jsize);
-    rb_ary_push(job_info_ary, jformat);
-    rb_ary_push(job_info_ary, jstate);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("title")), jtitle);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("user")), juser);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("size")), jsize);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("format")), jformat);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("state")), jstate);
     
-    rb_hash_aset(job_list, jid, job_info_ary); // And push it all into job_list hash
+    rb_hash_aset(job_list, jid, job_info_hash); // And push it all into job_list hash
   }
 
   // Free job array
