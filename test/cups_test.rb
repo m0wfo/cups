@@ -60,6 +60,14 @@ class CupsTest < Test::Unit::TestCase
   def test_all_jobs_returns_hash
     assert Cups.all_jobs(Cups.default_printer).is_a?(Hash)
   end
+
+  def test_all_jobs_hash_contains_info_hash
+    pj = Cups::PrintJob.new(sample, "PDF_Printer")
+    pj.print
+    info = Cups.all_jobs("PDF_Printer")[pj.job_id]
+    assert info.is_a?(Hash)
+    assert info.keys.all?{|key| [:title, :format, :user, :state, :size].include?(key)}
+  end
   
   def test_dest_list_returns_array
     assert Cups.show_destinations.is_a?(Array)
