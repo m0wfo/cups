@@ -293,10 +293,10 @@ static VALUE cups_job_completed(VALUE self)
 *   Cups.all_jobs(printer) -> Hash
 *
 * Get all jobs from default CUPS server. Takes a single printer/class string argument.
-* Returned hash keys are CUPS job ids, and the values are arrays of job info in the
-* following order:
+* Returned hash keys are CUPS job ids, and the values are hashes of job info
+* with keys:
 *
-* [title,submitted_by,size,format,state]
+* [:title, :submitted_by, :size, :format, :state]
 */
 static VALUE cups_get_jobs(VALUE self, VALUE printer)
 {
