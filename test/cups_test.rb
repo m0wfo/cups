@@ -66,7 +66,7 @@ class CupsTest < Test::Unit::TestCase
     pj.print
     info = Cups.all_jobs("PDF_Printer")[pj.job_id]
     assert info.is_a?(Hash)
-    assert info.keys.all?{|key| [:title, :format, :user, :state, :size].include?(key)}
+    assert info.keys.all?{|key| [:title, :format, :submitted_by, :state, :size].include?(key)}
   end
   
   def test_dest_list_returns_array

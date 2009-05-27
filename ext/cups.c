@@ -344,7 +344,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
     }
     
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("title")), jtitle);
-    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("user")), juser);
+    rb_hash_aset(job_info_hash, ID2SYM(rb_intern("submitted_by")), juser);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("size")), jsize);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("format")), jformat);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("state")), jstate);
