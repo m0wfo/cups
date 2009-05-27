@@ -199,48 +199,49 @@ static VALUE cups_get_job_state(VALUE self)
   ipp_jstate_t job_state = IPP_JOB_PENDING;
   int i;
   char *printer_arg = RSTRING_PTR(printer);
-  
+ 
   if (NIL_P(job_id)) {
     return Qnil;
   } else {
     num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    
+
     for (i = 0; i < num_jobs; i ++) {
       if (jobs[i].id == NUM2INT(job_id)) {
         job_state = jobs[i].state;
         break;
       }
-
-      // Free job array
-      cupsFreeJobs(num_jobs, jobs);
-      
-      rb_str_new2("ello");
-
-      switch (job_state) {
-        case IPP_JOB_PENDING :
-          jstate = rb_str_new2("Pending...");
-          break;
-        case IPP_JOB_HELD :
-          jstate = rb_str_new2("Held");
-          break;
-        case IPP_JOB_PROCESSING :
-          jstate = rb_str_new2("Processing...");
-          break;
-        case IPP_JOB_STOPPED :
-          jstate = rb_str_new2("Stopped");
-          break;
-        case IPP_JOB_CANCELED :
-          jstate = rb_str_new2("Cancelled");
-          break;
-        case IPP_JOB_ABORTED :
-          jstate = rb_str_new2("Aborted");
-          break;
-        case IPP_JOB_COMPLETED :
-          jstate = rb_str_new2("Completed");
-      }
-
-      return jstate;
     }
+
+     // Free job array
+     cupsFreeJobs(num_jobs, jobs);
+ 
+    switch (job_state) {
+      case IPP_JOB_PENDING :
+        jstate = rb_str_new2("Pending...");
+        break;
+      case IPP_JOB_HELD :
+        jstate = rb_str_new2("Held");
+        break;
+      case IPP_JOB_PROCESSING :
+        jstate = rb_str_new2("Processing...");
+        break;
+      case IPP_JOB_STOPPED :
+        jstate = rb_str_new2("Stopped");
+        break;
+      case IPP_JOB_CANCELED :
+        jstate = rb_str_new2("Cancelled");
+        break;
+      case IPP_JOB_ABORTED :
+        jstate = rb_str_new2("Aborted");
+        break;
+      case IPP_JOB_COMPLETED :
+		jstate = rb_str_new2("Completed");
+        break;
+      default:
+		jstate = rb_str_new2("Unknown Job Code...");
+    }
+
+    return jstate;
   }
 }
 
@@ -357,6 +358,39 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   return job_list;
 }
 
+/*
+ * call-seq:
+ *   Cups.options_for(name) -> Hash or nil
+ *
+ * Get all options from CUPS server with name. Returns a hash with key/value pairs
+ * based on server options, or nil if no server with name.
+ */
+static VALUE cups_get_options(VALUE self, VALUE printer)
+{
+  VALUE options_list;
+  int i;
+  char *printer_arg = RSTRING_PTR(printer);
+
+  options_list = rb_hash_new();
+
+  cups_dest_t *dests;
+  int num_dests = cupsGetDests(&dests);
+  cups_dest_t *dest = cupsGetDest(printer_arg, NULL, num_dests, dests);
+
+  if (dest == NULL) {
+    cupsFreeDests(num_dests, dests);
+    return Qnil;
+  } else {
+    for(i =0; i< dest->num_options; i++) {
+      rb_hash_aset(options_list, rb_str_new2(dest->options[i].name), rb_str_new2(dest->options[i].value));
+    }
+
+    cupsFreeDests(num_dests, dests);
+    return options_list;
+  }
+
+}
+
 // TODO
 // int ipp_state_to_string(int state)
 // {
@@ -419,4 +453,5 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
+  rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
 }

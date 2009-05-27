@@ -3,6 +3,8 @@ README.rdoc
 cups.gemspec
 ext/cups.c
 ext/extconf.rb
+ext/ruby_cups.h
 Manifest.txt
 test/cups_test.rb
 test/sample.txt
+test/sample_blank.txt

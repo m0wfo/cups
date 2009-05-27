@@ -1,5 +1,7 @@
 == Version 0.0.5
 
+2009-05-19: Added a Cups.options_for to view print server options [butzopower]
+
 2009-05-18: Job state bug fixes by [Brian Butz butzopower@gmail.com]
 
 2009-05-13: Proper RDoc

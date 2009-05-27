@@ -4,7 +4,7 @@ Print stuff in Ruby. This gem is a C wrapper for the CUPS API.
 
 == Installation
 
-  sudo gem install cmowforth-cups
+  sudo gem install cups
   
 To build the extensions, you need the cups library installed, and the cups-config programme in your path. On OS X you should have everything you need. On Debian/Ubuntu, running:
 
