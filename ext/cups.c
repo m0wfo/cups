@@ -5,6 +5,40 @@ static cups_option_t *options;
 cups_dest_t *dests, *dest;
 VALUE rubyCups, printJobs;
 
+// Need to abstract this out of cups.c
+char* ipp_state_to_string(int state)
+{
+
+  char *jstate;
+
+  switch (state) {
+    case IPP_JOB_PENDING :
+      jstate = "Pending...";
+      break;
+    case IPP_JOB_HELD :
+      jstate = "Held";
+      break;
+    case IPP_JOB_PROCESSING :
+      jstate = "Processing...";
+      break;
+    case IPP_JOB_STOPPED :
+      jstate = "Stopped";
+      break;
+    case IPP_JOB_CANCELED :
+      jstate = "Cancelled";
+      break;
+    case IPP_JOB_ABORTED :
+      jstate = "Aborted";
+      break;
+    case IPP_JOB_COMPLETED :
+      jstate = "Completed";
+      break;
+    default:
+      jstate = "Unknown Job Code...";
+  }
+  return jstate;
+}
+
 
 /*
 * call-seq:
@@ -212,34 +246,10 @@ static VALUE cups_get_job_state(VALUE self)
       }
     }
 
-     // Free job array
-     cupsFreeJobs(num_jobs, jobs);
+    // Free job array
+    cupsFreeJobs(num_jobs, jobs);
  
-    switch (job_state) {
-      case IPP_JOB_PENDING :
-        jstate = rb_str_new2("Pending...");
-        break;
-      case IPP_JOB_HELD :
-        jstate = rb_str_new2("Held");
-        break;
-      case IPP_JOB_PROCESSING :
-        jstate = rb_str_new2("Processing...");
-        break;
-      case IPP_JOB_STOPPED :
-        jstate = rb_str_new2("Stopped");
-        break;
-      case IPP_JOB_CANCELED :
-        jstate = rb_str_new2("Cancelled");
-        break;
-      case IPP_JOB_ABORTED :
-        jstate = rb_str_new2("Aborted");
-        break;
-      case IPP_JOB_COMPLETED :
-		jstate = rb_str_new2("Completed");
-        break;
-      default:
-		jstate = rb_str_new2("Unknown Job Code...");
-    }
+    jstate = rb_str_new2(ipp_state_to_string(job_state));
 
     return jstate;
   }
@@ -318,31 +328,8 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
     juser = rb_str_new2(jobs[i].user);
     jsize = INT2NUM(jobs[i].size);
     jformat = rb_str_new2(jobs[i].format);
-    
-    // Let's elaborate on that job state...
-    switch (jobs[i].state) {
-      case IPP_JOB_PENDING :
-        jstate = rb_str_new2("Pending...");
-        break;
-      case IPP_JOB_HELD :
-        jstate = rb_str_new2("Held");
-        break;
-      case IPP_JOB_PROCESSING :
-        jstate = rb_str_new2("Processing...");
-        break;
-      case IPP_JOB_STOPPED :
-        jstate = rb_str_new2("Stopped");
-        break;
-      case IPP_JOB_CANCELED :
-        jstate = rb_str_new2("Cancelled");
-        break;
-      case IPP_JOB_ABORTED :
-        jstate = rb_str_new2("Aborted");
-        break;
-      case IPP_JOB_COMPLETED :
-        jstate = rb_str_new2("Completed");
-    }
-    
+    jstate = rb_str_new2(ipp_state_to_string(jobs[i].state));
+
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("title")), jtitle);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("submitted_by")), juser);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("size")), jsize);
@@ -390,42 +377,6 @@ static VALUE cups_get_options(VALUE self, VALUE printer)
   }
 
 }
-
-// TODO
-// int ipp_state_to_string(int state)
-// {
-//   // char *jstate;
-//   switch (state) {
-//     case IPP_JOB_PENDING :
-//       // jstate = rb_str_new2("Pending...");
-//       // char jstate[] = "Pending...";
-//       break;
-//     case IPP_JOB_HELD :
-//       // jstate = rb_str_new2("Held");
-//       // char jstate[] = "Held";
-//       break;
-//     case IPP_JOB_PROCESSING :
-//       // jstate = rb_str_new2("Processing...");
-//       // char jstate[] = "Processing...";
-//       break;
-//     case IPP_JOB_STOPPED :
-//       // jstate = rb_str_new2("Stopped");
-//       // char jstate[] = "Stopped";
-//       break;
-//     case IPP_JOB_CANCELED :
-//       // jstate = rb_str_new2("Cancelled");
-//       // char jstate[] = "Cancelled";
-//       break;
-//     case IPP_JOB_ABORTED :
-//       // jstate = rb_str_new2("Aborted");
-//       // char jstate[] = "Aborted";
-//       break;
-//     case IPP_JOB_COMPLETED :
-//       // jstate = rb_str_new2("Completed");
-//       break;
-//   }
-//   return 0;
-// }
 
 /*
 */
