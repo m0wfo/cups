@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.description = <<-EOF
     Ruby CUPS provides a wrapper for the Common UNIX Printing System, allowing rubyists to perform basic tasks like printer discovery, job submission & querying.
   EOF
-  s.files = Dir.glob("{test}/**/*") | ["ext/cups.c", "ext/ruby_cups.h", "ext/extconf.rb"]
+  s.files = Dir.glob("{test}/**/*") | ["ext/cups.c", "ext/ruby_cups.h", "ext/extconf.rb"] | Dir.glob("{lib}/**/*")
   s.extensions << "ext/extconf.rb"
   s.homepage = "http://cups.rubyforge.org/"
   s.has_rdoc = true
