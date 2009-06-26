@@ -1,6 +1,10 @@
-== Version 0.0.5
+== Version 0.0.6
 
 2009-06-05: Added Transient adapter
+
+2009-06-26: Fixed bug when trying to print to a server with no default printer specified
+
+== Version 0.0.5
 
 2009-05-19: Added a Cups.options_for to view print server options [butzopower]
 
