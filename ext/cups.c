@@ -59,7 +59,12 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
 
     // Fall back to default printer
     VALUE def_p = rb_funcall(rubyCups, rb_intern("default_printer"), 0);
-    rb_iv_set(self, "@printer", def_p);
+
+    if (def_p == Qfalse) {
+			rb_raise(rb_eRuntimeError, "There is no default printer!");
+		} else {
+			rb_iv_set(self, "@printer", def_p);
+		}
     
   } else {
     // First call Cups#show_destinations
