@@ -1,3 +1,5 @@
+$LOAD_PATH.unshift File.expand_path( File.dirname(__FILE__) )
+
 require "cups"
 require "test/unit"
 
@@ -5,6 +7,12 @@ require "test/unit"
 # the CUPS command line utilities installed and in your $PATH
 
 class CupsTest < Test::Unit::TestCase
+
+  def setup
+    @printer = Cups.show_destinations.select {|p| p =~ /pdf/i}.first
+    raise "Can't fine a PDF printer to run tests with." unless @printer
+  end
+
   def test_same_printers_returned
     lplist = `lpstat -a`.split("\n").map { |pr| pr.split(' ').first }
     cups_destinations = Cups.show_destinations
@@ -18,7 +26,7 @@ class CupsTest < Test::Unit::TestCase
     end
     
     assert_nothing_raised do
-      Cups::PrintJob.new("/path", "PDF_Printer")
+      Cups::PrintJob.new("/path", @printer)
       Cups::PrintJob.new("/path")
     end
   end
@@ -50,7 +58,7 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_print_job_cancellation
-    pj = Cups::PrintJob.new(sample, "soft_class")
+    pj = Cups::PrintJob.new(sample, @printer)
     pj.print
     assert_not_nil pj.job_id
     assert_equal pj.cancel, true
@@ -62,9 +70,9 @@ class CupsTest < Test::Unit::TestCase
   end
 
   def test_all_jobs_hash_contains_info_hash
-    pj = Cups::PrintJob.new(sample, "PDF_Printer")
+    pj = Cups::PrintJob.new(sample, @printer)
     pj.print
-    info = Cups.all_jobs("PDF_Printer")[pj.job_id]
+    info = Cups.all_jobs(@printer)[pj.job_id]
     assert info.is_a?(Hash)
     assert info.keys.all?{|key| [:title, :format, :submitted_by, :state, :size].include?(key)}
   end
@@ -74,7 +82,7 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_dest_options_returns_hash_if_real
-    assert Cups.options_for("PDF_Printer").is_a?(Hash)
+    assert Cups.options_for(@printer).is_a?(Hash)
   end
 
   def test_dest_options_returns_nil_if_not_real
@@ -82,31 +90,31 @@ class CupsTest < Test::Unit::TestCase
   end
   
   def test_job_failed_boolean
-    pj = Cups::PrintJob.new(sample, "soft_class")
+    pj = Cups::PrintJob.new(sample, @printer)
     pj.print
     pj.cancel
     assert !pj.failed?
   end
   
   def test_returns_failure_string_on_cancellation
-    pj = Cups::PrintJob.new(blank_sample, "PDF_Printer")
+    pj = Cups::PrintJob.new(blank_sample, @printer)
     pj.print
-    
+
     assert pj.job_id == 0 # Failed jobs have an ID of zero
     assert pj.failed?
     
-    assert pj.error_reason.is_a?(String)
+    assert pj.error_reason.is_a?(Symbol)
   end
   
   def test_job_state_string
-    pj = Cups::PrintJob.new(sample, "soft_class")
+    pj = Cups::PrintJob.new(sample, @printer)
     assert_nil pj.state # A job can't have a state if it hasn't been assigned a job_id yet
     assert !pj.completed?
 
     pj.print
 
     pj.cancel
-    assert pj.state == "Cancelled"
+    assert pj.state == :cancelled
     assert !pj.completed?
   end
   
@@ -120,10 +128,10 @@ class CupsTest < Test::Unit::TestCase
   private
   
   def sample
-    "#{Dir.pwd}/sample.txt"
+    "#{File.dirname(__FILE__)}/sample.txt"
   end
   
   def blank_sample
-    "#{Dir.pwd}/sample_blank.txt"
+    "#{File.dirname(__FILE__)}/sample_blank.txt"
   end
 end
