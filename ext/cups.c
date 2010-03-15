@@ -6,35 +6,35 @@ cups_dest_t *dests, *dest;
 VALUE rubyCups, printJobs;
 
 // Need to abstract this out of cups.c
-char* ipp_state_to_string(int state)
+VALUE ipp_state_to_symbol(int state)
 {
 
-  char *jstate;
+  VALUE jstate;
 
   switch (state) {
     case IPP_JOB_PENDING :
-      jstate = "Pending...";
+      jstate = ID2SYM(rb_intern("pending"));  
       break;
     case IPP_JOB_HELD :
-      jstate = "Held";
+      jstate = ID2SYM(rb_intern("held"));
       break;
     case IPP_JOB_PROCESSING :
-      jstate = "Processing...";
+      jstate = ID2SYM(rb_intern("processing"));
       break;
     case IPP_JOB_STOPPED :
-      jstate = "Stopped";
+      jstate = ID2SYM(rb_intern("stopped"));
       break;
     case IPP_JOB_CANCELED :
-      jstate = "Cancelled";
+      jstate = ID2SYM(rb_intern("cancelled"));
       break;
     case IPP_JOB_ABORTED :
-      jstate = "Aborted";
+      jstate = ID2SYM(rb_intern("aborted"));
       break;
     case IPP_JOB_COMPLETED :
-      jstate = "Completed";
+      jstate = ID2SYM(rb_intern("completed"));
       break;
     default:
-      jstate = "Unknown Job Code...";
+      jstate = ID2SYM(rb_intern("unknown"));
   }
   return jstate;
 }
@@ -254,7 +254,7 @@ static VALUE cups_get_job_state(VALUE self)
     // Free job array
     cupsFreeJobs(num_jobs, jobs);
  
-    jstate = rb_str_new2(ipp_state_to_string(job_state));
+    jstate = ipp_state_to_symbol(job_state);
 
     return jstate;
   }
@@ -333,7 +333,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
     juser = rb_str_new2(jobs[i].user);
     jsize = INT2NUM(jobs[i].size);
     jformat = rb_str_new2(jobs[i].format);
-    jstate = rb_str_new2(ipp_state_to_string(jobs[i].state));
+    jstate = ID2SYM(ipp_state_to_symbol(jobs[i].state));
 
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("title")), jtitle);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("submitted_by")), juser);
