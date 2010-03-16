@@ -1,5 +1,4 @@
 require 'cups'
-require 'growl'
 
 module Printable
   attr_reader :print_job
