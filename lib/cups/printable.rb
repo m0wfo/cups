@@ -14,6 +14,7 @@ module Printable
       loop do
         state = @print_job.state
         block.call(state) and return if end_states.include?(state)
+        sleep 0.1
       end
     end if block_given?
     
