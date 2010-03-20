@@ -65,6 +65,10 @@ class CupsTest < Test::Unit::TestCase
     assert pj.job_id.is_a?(Fixnum)
   end
   
+  def test_all_jobs_raises_with_nonexistent_printers
+    assert_raise(RuntimeError) { Cups.all_jobs(nil) }
+  end
+  
   def test_all_jobs_returns_hash
     assert Cups.all_jobs(Cups.default_printer).is_a?(Hash)
   end
