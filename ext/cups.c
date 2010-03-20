@@ -6,39 +6,45 @@ cups_dest_t *dests, *dest;
 VALUE rubyCups, printJobs;
 
 // Need to abstract this out of cups.c
-char* ipp_state_to_string(int state)
+VALUE ipp_state_to_symbol(int state)
 {
 
-  char *jstate;
+  VALUE jstate;
 
   switch (state) {
     case IPP_JOB_PENDING :
-      jstate = "Pending...";
+      jstate = ID2SYM(rb_intern("pending"));  
       break;
     case IPP_JOB_HELD :
-      jstate = "Held";
+      jstate = ID2SYM(rb_intern("held"));
       break;
     case IPP_JOB_PROCESSING :
-      jstate = "Processing...";
+      jstate = ID2SYM(rb_intern("processing"));
       break;
     case IPP_JOB_STOPPED :
-      jstate = "Stopped";
+      jstate = ID2SYM(rb_intern("stopped"));
       break;
     case IPP_JOB_CANCELED :
-      jstate = "Cancelled";
+      jstate = ID2SYM(rb_intern("cancelled"));
       break;
     case IPP_JOB_ABORTED :
-      jstate = "Aborted";
+      jstate = ID2SYM(rb_intern("aborted"));
       break;
     case IPP_JOB_COMPLETED :
-      jstate = "Completed";
+      jstate = ID2SYM(rb_intern("completed"));
       break;
     default:
-      jstate = "Unknown Job Code...";
+      jstate = ID2SYM(rb_intern("unknown"));
   }
   return jstate;
 }
 
+int printer_exists(VALUE printer){
+  // First call Cups#show_destinations
+  VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
+  // Then check the printer arg is included in the returned array...
+  rb_ary_includes(dest_list, printer) ? 1 : 0;
+}
 
 /*
 * call-seq:
@@ -67,10 +73,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
 		}
     
   } else {
-    // First call Cups#show_destinations
-    VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
-    // Then check the printer arg is included in the returned array...
-    if (rb_ary_includes(dest_list, printer)) {
+    if (printer_exists(printer)) {
       rb_iv_set(self, "@printer", printer);
     } else {
       rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
@@ -98,7 +101,7 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
   // Check @filename actually exists...
   if( fp ) {
     fclose(fp);
-    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it.
+    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
     rb_iv_set(self, "@job_id", INT2NUM(job_id));
     return Qtrue;
   } else {
@@ -143,6 +146,7 @@ static VALUE cups_get_default(VALUE self)
     VALUE def_p = rb_str_new2(default_printer);
     return def_p;
   }
+  // should return nil if no default printer is found!
 }
 
 /*
@@ -164,7 +168,7 @@ static VALUE cups_cancel(VALUE self)
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
-    return Qtrue;
+    return Qtrue; // shouldn't it check if it successfully canceled the job?
   }
 }
 
@@ -254,7 +258,7 @@ static VALUE cups_get_job_state(VALUE self)
     // Free job array
     cupsFreeJobs(num_jobs, jobs);
  
-    jstate = rb_str_new2(ipp_state_to_string(job_state));
+    jstate = ipp_state_to_symbol(job_state);
 
     return jstate;
   }
@@ -313,8 +317,17 @@ static VALUE cups_job_completed(VALUE self)
 *
 * [:title, :submitted_by, :size, :format, :state]
 */
+
+
+
+// Crashes horribly if the printer doesn't exist.
 static VALUE cups_get_jobs(VALUE self, VALUE printer)
 {
+  // Don't have to lift a finger unless the printer exists.
+  if (!printer_exists(printer)){
+    rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+  }
+  
   VALUE job_list, job_info_hash, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
@@ -333,7 +346,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
     juser = rb_str_new2(jobs[i].user);
     jsize = INT2NUM(jobs[i].size);
     jformat = rb_str_new2(jobs[i].format);
-    jstate = rb_str_new2(ipp_state_to_string(jobs[i].state));
+    jstate = ipp_state_to_symbol(jobs[i].state);
 
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("title")), jtitle);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("submitted_by")), juser);
