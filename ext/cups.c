@@ -168,7 +168,7 @@ static VALUE cups_cancel(VALUE self)
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
-    return Qtrue; // shouldn't it check if it successfully canceled the job?
+    return Qtrue;
   }
 }
 
@@ -319,8 +319,6 @@ static VALUE cups_job_completed(VALUE self)
 */
 
 
-
-// Crashes horribly if the printer doesn't exist.
 static VALUE cups_get_jobs(VALUE self, VALUE printer)
 {
   // Don't have to lift a finger unless the printer exists.
@@ -372,6 +370,11 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
  */
 static VALUE cups_get_options(VALUE self, VALUE printer)
 {
+  // Don't have to lift a finger unless the printer exists.
+  if (!printer_exists(printer)){
+    rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+  }
+
   VALUE options_list;
   int i;
   char *printer_arg = RSTRING_PTR(printer);
