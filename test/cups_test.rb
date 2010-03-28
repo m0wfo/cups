@@ -1,7 +1,4 @@
-$LOAD_PATH.unshift File.expand_path( File.dirname(__FILE__) )
-
-require "cups"
-require "test/unit"
+require File.dirname(__FILE__) + '/test_helper'
 
 # The tests which don't make use of mocking go on the operating assumption that you have
 # the CUPS command line utilities installed and in your $PATH
@@ -61,11 +58,11 @@ class CupsTest < Test::Unit::TestCase
     pj = Cups::PrintJob.new(sample, @printer)
     pj.print
     assert_not_nil pj.job_id
-    assert_equal pj.cancel, true
+    assert pj.cancel
     assert pj.job_id.is_a?(Fixnum)
   end
   
-  def test_all_jobs_raises_with_nonexistent_printers
+  def test_all_jobs_raises_exception_with_nonexistent_printers
     assert_raise(RuntimeError) { Cups.all_jobs(nil) }
   end
   
@@ -89,7 +86,7 @@ class CupsTest < Test::Unit::TestCase
     assert Cups.options_for(@printer).is_a?(Hash)
   end
 
-  def test_dest_options_raises_exception_if_not_real
+  def test_dest_options_raises_exception_with_nonexistent_printers
     assert_raise(RuntimeError, "The printer or destination doesn't exist!") { Cups.options_for("bollocks_printer") }
   end
   
@@ -100,15 +97,15 @@ class CupsTest < Test::Unit::TestCase
     assert !pj.failed?
   end
   
-  def test_returns_failure_string_on_cancellation
-    pj = Cups::PrintJob.new(blank_sample, @printer)
-    pj.print
-
-    assert pj.job_id == 0 # Failed jobs have an ID of zero
-    assert pj.failed?
-
-    assert pj.error_reason.is_a?(Symbol)
-  end
+  # def test_returns_failure_string_on_cancellation
+  #   pj = Cups::PrintJob.new(blank_sample, @printer)
+  #   pj.print
+  #
+  #   assert pj.job_id == 0 # Failed jobs have an ID of zero
+  #   assert pj.failed?
+  #
+  #   assert pj.error_reason.is_a?(Symbol)
+  # end
 
   def test_job_state_string
     pj = Cups::PrintJob.new(sample, @printer)
