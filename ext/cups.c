@@ -39,6 +39,12 @@ VALUE ipp_state_to_symbol(int state)
   return jstate;
 }
 
+int printer_exists(VALUE printer){
+  // First call Cups#show_destinations
+  VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
+  // Then check the printer arg is included in the returned array...
+  rb_ary_includes(dest_list, printer) ? 1 : 0;
+}
 
 /*
 * call-seq:
@@ -67,10 +73,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
 		}
     
   } else {
-    // First call Cups#show_destinations
-    VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
-    // Then check the printer arg is included in the returned array...
-    if (rb_ary_includes(dest_list, printer)) {
+    if (printer_exists(printer)) {
       rb_iv_set(self, "@printer", printer);
     } else {
       rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
@@ -98,7 +101,7 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
   // Check @filename actually exists...
   if( fp ) {
     fclose(fp);
-    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it.
+    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
     rb_iv_set(self, "@job_id", INT2NUM(job_id));
     return Qtrue;
   } else {
@@ -143,6 +146,7 @@ static VALUE cups_get_default(VALUE self)
     VALUE def_p = rb_str_new2(default_printer);
     return def_p;
   }
+  // should return nil if no default printer is found!
 }
 
 /*
@@ -313,8 +317,15 @@ static VALUE cups_job_completed(VALUE self)
 *
 * [:title, :submitted_by, :size, :format, :state]
 */
+
+
 static VALUE cups_get_jobs(VALUE self, VALUE printer)
 {
+  // Don't have to lift a finger unless the printer exists.
+  if (!printer_exists(printer)){
+    rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+  }
+
   VALUE job_list, job_info_hash, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
@@ -359,6 +370,11 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
  */
 static VALUE cups_get_options(VALUE self, VALUE printer)
 {
+  // Don't have to lift a finger unless the printer exists.
+  if (!printer_exists(printer)){
+    rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+  }
+
   VALUE options_list;
   int i;
   char *printer_arg = RSTRING_PTR(printer);

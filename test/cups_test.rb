@@ -10,7 +10,7 @@ class CupsTest < Test::Unit::TestCase
 
   def setup
     @printer = Cups.show_destinations.select {|p| p =~ /pdf/i}.first
-    raise "Can't fine a PDF printer to run tests with." unless @printer
+    raise "Can't find a PDF printer to run tests with." unless @printer
   end
 
   def test_same_printers_returned
@@ -65,6 +65,10 @@ class CupsTest < Test::Unit::TestCase
     assert pj.job_id.is_a?(Fixnum)
   end
   
+  def test_all_jobs_raises_with_nonexistent_printers
+    assert_raise(RuntimeError) { Cups.all_jobs(nil) }
+  end
+
   def test_all_jobs_returns_hash
     assert Cups.all_jobs(Cups.default_printer).is_a?(Hash)
   end
@@ -85,8 +89,8 @@ class CupsTest < Test::Unit::TestCase
     assert Cups.options_for(@printer).is_a?(Hash)
   end
 
-  def test_dest_options_returns_nil_if_not_real
-    assert_nil Cups.options_for("bollocks_printer")
+  def test_dest_options_raises_exception_if_not_real
+    assert_raise(RuntimeError, "The printer or destination doesn't exist!") { Cups.options_for("bollocks_printer") }
   end
   
   def test_job_failed_boolean
@@ -102,10 +106,9 @@ class CupsTest < Test::Unit::TestCase
 
     assert pj.job_id == 0 # Failed jobs have an ID of zero
     assert pj.failed?
-    
     assert pj.error_reason.is_a?(Symbol)
   end
-  
+
   def test_job_state_string
     pj = Cups::PrintJob.new(sample, @printer)
     assert_nil pj.state # A job can't have a state if it hasn't been assigned a job_id yet
