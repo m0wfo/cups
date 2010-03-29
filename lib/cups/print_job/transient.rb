@@ -1,6 +1,6 @@
 require "cups"
 require "tempfile"
-require "digest/sha1"
+require "digest/sha2"
 
 module Cups
 
@@ -44,7 +44,7 @@ module Cups
       def initialize(data_string, printer=nil)
         raise "Temporary print job has no data!" if data_string.empty?
 
-        sha1 = Digest::SHA1.hexdigest(Time.now.to_s)
+        sha1 = Digest::SHA2.hexdigest(Time.now.to_f.to_s)
         file = Tempfile.new(sha1)
         file.puts(data_string)
         file.close
