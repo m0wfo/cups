@@ -101,8 +101,37 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
   // Check @filename actually exists...
   if( fp ) {
     fclose(fp);
-    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
+
+    // --------------------------------------
+    // --------------------------------------
+    // my custom options
+    int i;
+    cups_dest_t *myDests;
+    int num_dests = cupsGetDests(&myDests);
+    cups_dest_t *thisPrinter = cupsGetDest(target, NULL, num_dests, myDests);
+    int this_num_options = 0;
+    cups_option_t *my_options = NULL;
+
+    // copy current opts into new array
+    for (i = 0; i < thisPrinter->num_options; i ++) {
+      this_num_options = cupsAddOption(
+        thisPrinter->options[i].name,
+        thisPrinter->options[i].value,
+        this_num_options,
+        &my_options);
+    }
+    this_num_options = cupsAddOption("copies", "3", this_num_options, &my_options);
+
+    // --------------------------------------
+    // --------------------------------------
+
+    job_id = cupsPrintFile(target, fname, "rCUPS", this_num_options, my_options); // Do it. "rCups" should be the filename/path
     rb_iv_set(self, "@job_id", INT2NUM(job_id));
+
+    // free the printer vars
+    cupsFreeDests(num_dests, myDests);
+    cupsFreeOptions(this_num_options, my_options);
+
     return Qtrue;
   } else {
   // and if it doesn't...

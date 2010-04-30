@@ -53,6 +53,8 @@ class CupsTest < Test::Unit::TestCase
     assert_raise(RuntimeError) do
       pj.print
     end
+
+    warn Cups.options_for("soft_class")
   
     assert_nil pj.job_id
   end
