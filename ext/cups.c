@@ -107,7 +107,7 @@ static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
   } else {
   // and if it doesn't...
     rb_raise(rb_eRuntimeError, "Couldn't find file");
-    return self;
+    return Qfalse;
   }
 }
 
