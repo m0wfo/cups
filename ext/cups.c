@@ -1,7 +1,5 @@
 #include <ruby_cups.h>
 
-static int num_options;
-static cups_option_t *options;
 cups_dest_t *dests, *dest;
 VALUE rubyCups, printJobs;
 
@@ -55,12 +53,18 @@ int printer_exists(VALUE printer){
 */
 static VALUE job_init(int argc, VALUE* argv, VALUE self)
 {
-  VALUE filename, printer;
+  VALUE filename, printer, job_options;
   
-  rb_scan_args(argc, argv, "11", &filename, &printer);
+  rb_scan_args(argc, argv, "12", &filename, &printer, &job_options);
   
   rb_iv_set(self, "@filename", filename);
   
+  if (NIL_P(job_options)) {
+    rb_iv_set(self, "@job_options", rb_hash_new());
+  } else {
+    rb_iv_set(self, "@job_options", job_options);
+  }
+
   if (NIL_P(printer)) {
 
     // Fall back to default printer
@@ -83,26 +87,72 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
 }
 
 /*
+ * Note: rb_hash_keys is defined in 1.8.6, but not in 1.8.7 ubuntu shared lib
+ * This is so that I can get a list of keys to convert to options
+ */
+static int
+cups_keys_i(key, value, ary)
+  VALUE key, value, ary;
+{
+  if (key == Qundef) return ST_CONTINUE;
+  rb_ary_push(ary, key);
+  return ST_CONTINUE;
+}
+
+/*
 * call-seq:
 *   print_job.print -> Fixnum
 *
 * Submit a print job to the selected printer or class. Returns true on success.
 */
-static VALUE cups_print(VALUE self, VALUE file, VALUE printer)
+static VALUE cups_print(VALUE self)
 {
   int job_id;
-  file = rb_iv_get(self, "@filename");
-  printer = rb_iv_get(self, "@printer");
-  
+  VALUE file = rb_iv_get(self, "@filename");
+  VALUE printer = rb_iv_get(self, "@printer");
+
   char *fname = RSTRING_PTR(file); // Filename
   char *target = RSTRING_PTR(printer); // Target printer string
-  
+
   FILE *fp = fopen(fname,"r");
   // Check @filename actually exists...
   if( fp ) {
     fclose(fp);
+
+    VALUE job_options = rb_iv_get(self, "@job_options");
+
+    // Create an array of the keys from the job_options hash
+    VALUE job_options_keys = rb_ary_new();
+    rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
+  
+    VALUE iter;
+    int num_options = 0;
+    cups_option_t *options = NULL;
+
+    // foreach option in the job options array
+    while (!  NIL_P(iter = rb_ary_pop(job_options_keys))) {
+
+      VALUE value = rb_hash_aref(job_options, iter);
+
+      // assert the key and value are strings
+      if (NIL_P(rb_check_string_type(iter)) || NIL_P(rb_check_string_type(value))) {
+        cupsFreeOptions(num_options, options);
+        rb_raise(rb_eTypeError, "job options is not string => string hash");
+        return Qfalse;
+      }
+
+      // convert to char pointers and add to cups optoins
+      char * iter_str  = rb_string_value_ptr(&iter);
+      char * value_str = rb_string_value_ptr(&value);
+      cupsAddOption(iter_str, value_str, num_options++, &options);
+    }
+
     job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
+
+    cupsFreeOptions(num_options, options);
+
     rb_iv_set(self, "@job_id", INT2NUM(job_id));
+
     return Qtrue;
   } else {
   // and if it doesn't...
@@ -410,6 +460,7 @@ void Init_cups() {
   rb_define_attr(printJobs, "printer", 1, 0);
   rb_define_attr(printJobs, "filename", 1, 0);
   rb_define_attr(printJobs, "job_id", 1, 0);
+  rb_define_attr(printJobs, "job_options", 1, 0);
 
   // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, -1);

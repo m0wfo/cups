@@ -1,5 +1,6 @@
 $LOAD_PATH.unshift File.expand_path( File.dirname(__FILE__) )
 
+require 'rubygems'
 require "cups"
 require "test/unit"
 
@@ -46,7 +47,7 @@ class CupsTest < Test::Unit::TestCase
       assert !Cups.show_destinations.include?(pj.instance_variable_get(:@printer))
     end
   end
-  
+
   def test_we_cant_print_nonexistent_files
     pj = Cups::PrintJob.new("soft_class")
     
@@ -55,6 +56,23 @@ class CupsTest < Test::Unit::TestCase
     end
   
     assert_nil pj.job_id
+  end
+  
+  def test_we_can_pass_args_down_as_options
+    options = {:foo => 'bar'}
+    pj = Cups::PrintJob.new(sample, @printer, options)
+    assert_equal(options, pj.job_options)
+  end
+  
+  def test_we_can_only_pass_strings_down_as_options
+    options = {:foo => 'bar'}
+    pj = Cups::PrintJob.new(sample, @printer, options)
+    assert_raise(TypeError) { pj.print }
+  end
+  
+  def test_we_can_omit_options_and_will_set_to_empty
+    pj = Cups::PrintJob.new(sample, @printer)
+    assert_equal({}, pj.job_options)
   end
   
   def test_print_job_cancellation
