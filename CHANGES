@@ -1,3 +1,7 @@
+== Version 0.0.7
+
+2010-11-12: PrintJob instances now take an options hash, thanks to [ransombriggs]
+
 == Version 0.0.6
 
 2009-06-05: Added Transient adapter
@@ -8,7 +12,7 @@
 
 2009-05-19: Added a Cups.options_for to view print server options [butzopower]
 
-2009-05-18: Job state bug fixes by [Brian Butz butzopower@gmail.com]
+2009-05-18: Job state bug fixes by [butzopower]
 
 2009-05-13: Proper RDoc
 
