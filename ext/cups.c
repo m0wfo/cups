@@ -412,6 +412,28 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 }
 
 /*
+* call-seq:
+*   Cups.cancel_print(cups_id) -> true or false
+*
+* Cancel the print job. Returns true if successful, false otherwise.
+*/
+static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self, VALUE self)
+{
+  VALUE printer, job_id;
+  rb_scan_args(argc, argv, "12", &job_id, &printer);
+  
+  if (NIL_P(job_id)) {
+    return Qfalse; // If @job_id is nil
+  } else { // Otherwise attempt to cancel
+    int job = NUM2INT(job_id);
+    char *target = RSTRING_PTR(printer); // Target printer string
+    int cancellation;
+    cancellation = cupsCancelJob(target, job);
+    return Qtrue;
+  }
+}
+
+/*
  * call-seq:
  *   Cups.options_for(name) -> Hash or nil
  *
@@ -476,5 +498,6 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
+  rb_define_singleton_method(rubyCups, "cancel_print", cups_cancel_print, -1)
   rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
 }
