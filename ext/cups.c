@@ -417,7 +417,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 *
 * Cancel the print job. Returns true if successful, false otherwise.
 */
-static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self, VALUE self)
+static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
 {
   VALUE printer, job_id;
   rb_scan_args(argc, argv, "12", &job_id, &printer);
@@ -498,6 +498,6 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
-  rb_define_singleton_method(rubyCups, "cancel_print", cups_cancel_print, -1)
+  rb_define_singleton_method(rubyCups, "cancel_print", cups_cancel_print, -1);
   rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
 }
