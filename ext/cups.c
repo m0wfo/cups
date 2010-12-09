@@ -58,6 +58,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
   rb_scan_args(argc, argv, "12", &filename, &printer, &job_options);
   
   rb_iv_set(self, "@filename", filename);
+  rb_iv_set(self, "@url_path", rb_str_new2(cupsServer()));
   
   if (NIL_P(job_options)) {
     rb_iv_set(self, "@job_options", rb_hash_new());
@@ -110,55 +111,54 @@ static VALUE cups_print(VALUE self)
   int job_id;
   VALUE file = rb_iv_get(self, "@filename");
   VALUE printer = rb_iv_get(self, "@printer");
+  VALUE url_path = rb_iv_get(self, "@url_path");
 
   char *fname = RSTRING_PTR(file); // Filename
   char *target = RSTRING_PTR(printer); // Target printer string
-
-  FILE *fp = fopen(fname,"r");
-  // Check @filename actually exists...
-  if( fp ) {
-    fclose(fp);
-
-    VALUE job_options = rb_iv_get(self, "@job_options");
-
-    // Create an array of the keys from the job_options hash
-    VALUE job_options_keys = rb_ary_new();
-    rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
+  char *url = RSTRING_PTR(url_path); // Server URL address
+  int port = 631; // Default CUPS port
   
-    VALUE iter;
-    int num_options = 0;
-    cups_option_t *options = NULL;
+  VALUE job_options = rb_iv_get(self, "@job_options");
 
-    // foreach option in the job options array
-    while (!  NIL_P(iter = rb_ary_pop(job_options_keys))) {
+  // Create an array of the keys from the job_options hash
+  VALUE job_options_keys = rb_ary_new();
+  rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
+  
+  VALUE iter;
+  int num_options = 0;
+  cups_option_t *options = NULL;
 
-      VALUE value = rb_hash_aref(job_options, iter);
+  // foreach option in the job options array
+  while (!  NIL_P(iter = rb_ary_pop(job_options_keys))) {
 
-      // assert the key and value are strings
-      if (NIL_P(rb_check_string_type(iter)) || NIL_P(rb_check_string_type(value))) {
-        cupsFreeOptions(num_options, options);
-        rb_raise(rb_eTypeError, "job options is not string => string hash");
-        return Qfalse;
-      }
+    VALUE value = rb_hash_aref(job_options, iter);
 
-      // convert to char pointers and add to cups optoins
-      char * iter_str  = rb_string_value_ptr(&iter);
-      char * value_str = rb_string_value_ptr(&value);
-      cupsAddOption(iter_str, value_str, num_options++, &options);
+    // assert the key and value are strings
+    if (NIL_P(rb_check_string_type(iter)) || NIL_P(rb_check_string_type(value))) {
+      cupsFreeOptions(num_options, options);
+      rb_raise(rb_eTypeError, "job options is not string => string hash");
+      return Qfalse;
     }
 
-    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
-
-    cupsFreeOptions(num_options, options);
-
-    rb_iv_set(self, "@job_id", INT2NUM(job_id));
-
-    return Qtrue;
-  } else {
-  // and if it doesn't...
-    rb_raise(rb_eRuntimeError, "Couldn't find file");
-    return Qfalse;
+    // convert to char pointers and add to cups optoins
+    char * iter_str  = rb_string_value_ptr(&iter);
+    char * value_str = rb_string_value_ptr(&value);
+    cupsAddOption(iter_str, value_str, num_options++, &options);
   }
+
+  if(NIL_P(url)) {
+    url = cupsServer();
+  }
+    
+  int encryption = (http_encryption_t)cupsEncryption();
+  http_t *http = httpConnectEncrypt (url, port, (http_encryption_t) encryption);
+  job_id = cupsPrintFile2(http, target, fname, "rCups", num_options, options); // Do it. "rCups" should be the filename/path
+    
+  cupsFreeOptions(num_options, options);
+  
+  rb_iv_set(self, "@job_id", INT2NUM(job_id));
+
+  return Qtrue;    
 }
 
 /*
@@ -481,6 +481,7 @@ void Init_cups() {
   // Cups::PrintJob Attributes
   rb_define_attr(printJobs, "printer", 1, 0);
   rb_define_attr(printJobs, "filename", 1, 0);
+  rb_define_attr(printJobs, "url_path", 1, 0);
   rb_define_attr(printJobs, "job_id", 1, 0);
   rb_define_attr(printJobs, "job_options", 1, 0);
 
