@@ -6,7 +6,6 @@ VALUE rubyCups, printJobs;
 // Need to abstract this out of cups.c
 VALUE ipp_state_to_symbol(int state)
 {
-
   VALUE jstate;
 
   switch (state) {
@@ -117,7 +116,7 @@ static VALUE cups_print(VALUE self)
   char *target = RSTRING_PTR(printer); // Target printer string
   char *url = RSTRING_PTR(url_path); // Server URL address
   int port = 631; // Default CUPS port
-  
+    
   VALUE job_options = rb_iv_get(self, "@job_options");
 
   // Create an array of the keys from the job_options hash
@@ -413,14 +412,17 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 
 /*
 * call-seq:
-*   Cups.cancel_print(cups_id) -> true or false
+*   Cups.cancel_print(cups_id, printer_name) -> true or false
 *
 * Cancel the print job. Returns true if successful, false otherwise.
 */
 static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
 {
   VALUE printer, job_id;
-  rb_scan_args(argc, argv, "12", &job_id, &printer);
+  rb_scan_args(argc, argv, "20", &job_id, &printer);
+  
+  VALUE url_path = cupsServer();
+  char *url = RSTRING_PTR(url_path);
   
   if (NIL_P(job_id)) {
     return Qfalse; // If @job_id is nil
@@ -431,6 +433,44 @@ static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
     cancellation = cupsCancelJob(target, job);
     return Qtrue;
   }
+}
+
+/*
+ *  call-seq:
+ *    Cups.device_uri_for(printer_name) -> String
+ *
+ *  Return uri for requested printer.
+ */
+static VALUE cups_get_device_uri(VALUE self, VALUE printer) 
+{
+   if (!printer_exists(printer)) 
+   {
+     rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+   }
+   
+   VALUE options_list;
+   http_t *http;
+   ipp_t *request;
+   ipp_t *response;
+   ipp_attribute_t *attr;
+   char uri[1024];
+   char *location;
+   
+   char *name = RSTRING_PTR(printer);
+   
+   request = ippNewRequest(IPP_GET_PRINTER_ATTRIBUTES);
+   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL, "localhost", 0, "/printers/%s", name);
+   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
+   
+   if ((response = cupsDoRequest(http, request, "/")) != NULL) 
+   {
+     if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL) 
+     {
+        return rb_str_new2(attr->values[0].string.text);
+     }
+     ippDelete(response);
+   }   
+   return Qtrue;
 }
 
 /*
@@ -501,4 +541,6 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
   rb_define_singleton_method(rubyCups, "cancel_print", cups_cancel_print, -1);
   rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
+  rb_define_singleton_method(rubyCups, "device_uri_for", cups_get_device_uri, 1);
+  rb_define_singleton_method(rubyCups, "get_connection_for", cups_get_device_uri, 1);
 }
