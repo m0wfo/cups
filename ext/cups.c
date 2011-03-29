@@ -165,7 +165,7 @@ static VALUE cups_print(VALUE self)
   if(url != NULL)
     free(url);
     
-  if(target != NULL))
+  if(target != NULL)
     free(target);
     
   if(http != NULL)
@@ -192,9 +192,7 @@ static VALUE cups_show_dests(VALUE self)
     rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
   }
   
-  if(dests != NULL)
-    free(dests);
-  
+  cupsFreeDests(num_dests, dests);  
   return dest_list;
 }
 
@@ -211,8 +209,7 @@ static VALUE cups_get_default(VALUE self)
 
   if (default_printer != NULL) {
     VALUE def_p = rb_str_new2(default_printer);
-    if(default_printer != NULL)
-      free(default_printer);
+
     return def_p;
   }
   // should return nil if no default printer is found!
@@ -237,8 +234,6 @@ static VALUE cups_cancel(VALUE self)
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
-    if(target != NULL)
-      free(target);
     return Qtrue;
   }
 }
@@ -440,13 +435,6 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 
   // Free job array
   cupsFreeJobs(num_jobs, jobs);
-
-  if(jobs != NULL)
-    free(jobs);
-  if(printer_arg != NULL)
-    free(printer_arg);
-    
-
   return job_list;
 }
 
@@ -506,47 +494,10 @@ static VALUE cups_get_device_uri(VALUE self, VALUE printer)
    {
      if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL) 
      {
-       if(http != NULL)
-         free(http);
-
-       if(request != NULL)
-         free(request);
-
-       if(response != NULL)
-         free(response);
-
-       if(attr != NULL)
-         free(attr);
-
-       if(location != NULL)
-         free(location);
-
-       if(name != NULL)
-         free(name);
        return rb_str_new2(attr->values[0].string.text);
      }
      ippDelete(response);
    }
-   
-   
-   if(http != NULL)
-     free(http);
-     
-   if(request != NULL)
-     free(request);
-     
-   if(response != NULL)
-     free(response);
-     
-   if(attr != NULL)
-     free(attr);
-     
-   if(location != NULL)
-     free(location);
-     
-   if(name != NULL)
-     free(name);
-   
    return Qtrue;
 }
 
@@ -575,34 +526,13 @@ static VALUE cups_get_options(VALUE self, VALUE printer)
   cups_dest_t *dest = cupsGetDest(printer_arg, NULL, num_dests, dests);
 
   if (dest == NULL) {
-    cupsFreeDests(num_dests, dests);
-    
-    if(printer_arg != NULL)
-      free(printer_arg);
-    
-    if(dests != NULL)
-      free(dests);
-    
-    if(dest != NULL)
-      free(dest);
-    
+    cupsFreeDests(num_dests, dests);    
     return Qnil;
   } else {
     for(i =0; i< dest->num_options; i++) {
       rb_hash_aset(options_list, rb_str_new2(dest->options[i].name), rb_str_new2(dest->options[i].value));
     }
-
     cupsFreeDests(num_dests, dests);
-    
-    if(printer_arg != NULL)
-      free(printer_arg);
-    
-    if(dests != NULL)
-      free(dests);
-    
-    if(dest != NULL)
-      free(dest);
-    
     return options_list;
   }
 
