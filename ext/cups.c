@@ -6,7 +6,6 @@ VALUE rubyCups, printJobs;
 // Need to abstract this out of cups.c
 VALUE ipp_state_to_symbol(int state)
 {
-
   VALUE jstate;
 
   switch (state) {
@@ -58,6 +57,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
   rb_scan_args(argc, argv, "12", &filename, &printer, &job_options);
   
   rb_iv_set(self, "@filename", filename);
+  rb_iv_set(self, "@url_path", rb_str_new2(cupsServer()));
   
   if (NIL_P(job_options)) {
     rb_iv_set(self, "@job_options", rb_hash_new());
@@ -110,55 +110,68 @@ static VALUE cups_print(VALUE self)
   int job_id;
   VALUE file = rb_iv_get(self, "@filename");
   VALUE printer = rb_iv_get(self, "@printer");
+  VALUE url_path = rb_iv_get(self, "@url_path");
 
   char *fname = RSTRING_PTR(file); // Filename
   char *target = RSTRING_PTR(printer); // Target printer string
+  char *url = RSTRING_PTR(url_path); // Server URL address
+  int port = 631; // Default CUPS port
+    
+  VALUE job_options = rb_iv_get(self, "@job_options");
 
-  FILE *fp = fopen(fname,"r");
-  // Check @filename actually exists...
-  if( fp ) {
-    fclose(fp);
-
-    VALUE job_options = rb_iv_get(self, "@job_options");
-
-    // Create an array of the keys from the job_options hash
-    VALUE job_options_keys = rb_ary_new();
-    rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
+  // Create an array of the keys from the job_options hash
+  VALUE job_options_keys = rb_ary_new();
+  rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
   
-    VALUE iter;
-    int num_options = 0;
-    cups_option_t *options = NULL;
+  VALUE iter;
+  int num_options = 0;
+  cups_option_t *options = NULL;
 
-    // foreach option in the job options array
-    while (!  NIL_P(iter = rb_ary_pop(job_options_keys))) {
+  // foreach option in the job options array
+  while (!  NIL_P(iter = rb_ary_pop(job_options_keys))) {
 
-      VALUE value = rb_hash_aref(job_options, iter);
+    VALUE value = rb_hash_aref(job_options, iter);
 
-      // assert the key and value are strings
-      if (NIL_P(rb_check_string_type(iter)) || NIL_P(rb_check_string_type(value))) {
-        cupsFreeOptions(num_options, options);
-        rb_raise(rb_eTypeError, "job options is not string => string hash");
-        return Qfalse;
-      }
-
-      // convert to char pointers and add to cups optoins
-      char * iter_str  = rb_string_value_ptr(&iter);
-      char * value_str = rb_string_value_ptr(&value);
-      cupsAddOption(iter_str, value_str, num_options++, &options);
+    // assert the key and value are strings
+    if (NIL_P(rb_check_string_type(iter)) || NIL_P(rb_check_string_type(value))) {
+      cupsFreeOptions(num_options, options);
+      rb_raise(rb_eTypeError, "job options is not string => string hash");
+      return Qfalse;
     }
 
-    job_id = cupsPrintFile(target, fname, "rCUPS", num_options, options); // Do it. "rCups" should be the filename/path
-
-    cupsFreeOptions(num_options, options);
-
-    rb_iv_set(self, "@job_id", INT2NUM(job_id));
-
-    return Qtrue;
-  } else {
-  // and if it doesn't...
-    rb_raise(rb_eRuntimeError, "Couldn't find file");
-    return Qfalse;
+    // convert to char pointers and add to cups optoins
+    char * iter_str  = rb_string_value_ptr(&iter);
+    char * value_str = rb_string_value_ptr(&value);
+    cupsAddOption(iter_str, value_str, num_options++, &options);
   }
+
+  if(NIL_P(url)) {
+    url = cupsServer();
+  }
+    
+  int encryption = (http_encryption_t)cupsEncryption();
+  http_t *http = httpConnectEncrypt (url, port, (http_encryption_t) encryption);
+  job_id = cupsPrintFile2(http, target, fname, "rCups", num_options, options); // Do it. "rCups" should be the filename/path
+    
+  cupsFreeOptions(num_options, options);
+  
+  rb_iv_set(self, "@job_id", INT2NUM(job_id));
+  
+  
+  // 25.03 free memory
+  if(fname != NULL)
+    free(fname);
+    
+  if(url != NULL)
+    free(url);
+    
+  if(target != NULL)
+    free(target);
+    
+  if(http != NULL)
+    free(http);
+    
+  return Qtrue;    
 }
 
 /*
@@ -178,6 +191,8 @@ static VALUE cups_show_dests(VALUE self)
     VALUE destination = rb_str_new2(dest->name);
     rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
   }
+  
+  cupsFreeDests(num_dests, dests);  
   return dest_list;
 }
 
@@ -194,6 +209,7 @@ static VALUE cups_get_default(VALUE self)
 
   if (default_printer != NULL) {
     VALUE def_p = rb_str_new2(default_printer);
+
     return def_p;
   }
   // should return nil if no default printer is found!
@@ -310,6 +326,12 @@ static VALUE cups_get_job_state(VALUE self)
  
     jstate = ipp_state_to_symbol(job_state);
 
+    if(jobs != NULL)
+      free(jobs);
+      
+    if(printer_arg != NULL)
+      free(printer_arg);
+
     return jstate;
   }
 }
@@ -346,6 +368,12 @@ static VALUE cups_job_completed(VALUE self)
       
       // Free job array
       cupsFreeJobs(num_jobs, jobs);
+      
+      if(jobs != NULL)
+        free(jobs);
+        
+      if(printer_arg != NULL)
+        free(printer_arg);
       
       if (job_state == IPP_JOB_COMPLETED) {
         return Qtrue;
@@ -407,8 +435,70 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
 
   // Free job array
   cupsFreeJobs(num_jobs, jobs);
-
   return job_list;
+}
+
+/*
+* call-seq:
+*   Cups.cancel_print(cups_id, printer_name) -> true or false
+*
+* Cancel the print job. Returns true if successful, false otherwise.
+*/
+static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
+{
+  VALUE printer, job_id;
+  rb_scan_args(argc, argv, "20", &job_id, &printer);
+    
+  if (NIL_P(job_id)) {
+    return Qfalse; // If @job_id is nil
+  } else { // Otherwise attempt to cancel
+    int job = NUM2INT(job_id);
+    char *target = RSTRING_PTR(printer); // Target printer string
+    int cancellation;
+    cancellation = cupsCancelJob(target, job);
+    
+    if(target != NULL)
+      free(target);
+      
+    return Qtrue;
+  }
+}
+
+/*
+ *  call-seq:
+ *    Cups.device_uri_for(printer_name) -> String
+ *
+ *  Return uri for requested printer.
+ */
+static VALUE cups_get_device_uri(VALUE self, VALUE printer) 
+{
+   if (!printer_exists(printer)) 
+   {
+     rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
+   }
+   
+   VALUE options_list;
+   http_t *http;
+   ipp_t *request;
+   ipp_t *response;
+   ipp_attribute_t *attr;
+   char uri[1024];
+   char *location;   
+   char *name = RSTRING_PTR(printer);
+      
+   request = ippNewRequest(IPP_GET_PRINTER_ATTRIBUTES);
+   httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL, "localhost", 0, "/printers/%s", name);
+   ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
+   
+   if ((response = cupsDoRequest(http, request, "/")) != NULL) 
+   {
+     if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL) 
+     {
+       return rb_str_new2(attr->values[0].string.text);
+     }
+     ippDelete(response);
+   }
+   return Qtrue;
 }
 
 /*
@@ -436,13 +526,12 @@ static VALUE cups_get_options(VALUE self, VALUE printer)
   cups_dest_t *dest = cupsGetDest(printer_arg, NULL, num_dests, dests);
 
   if (dest == NULL) {
-    cupsFreeDests(num_dests, dests);
+    cupsFreeDests(num_dests, dests);    
     return Qnil;
   } else {
     for(i =0; i< dest->num_options; i++) {
       rb_hash_aset(options_list, rb_str_new2(dest->options[i].name), rb_str_new2(dest->options[i].value));
     }
-
     cupsFreeDests(num_dests, dests);
     return options_list;
   }
@@ -459,6 +548,7 @@ void Init_cups() {
   // Cups::PrintJob Attributes
   rb_define_attr(printJobs, "printer", 1, 0);
   rb_define_attr(printJobs, "filename", 1, 0);
+  rb_define_attr(printJobs, "url_path", 1, 0);
   rb_define_attr(printJobs, "job_id", 1, 0);
   rb_define_attr(printJobs, "job_options", 1, 0);
 
@@ -476,5 +566,8 @@ void Init_cups() {
   rb_define_singleton_method(rubyCups, "show_destinations", cups_show_dests, 0);
   rb_define_singleton_method(rubyCups, "default_printer", cups_get_default, 0);
   rb_define_singleton_method(rubyCups, "all_jobs", cups_get_jobs, 1);
+  rb_define_singleton_method(rubyCups, "cancel_print", cups_cancel_print, -1);
   rb_define_singleton_method(rubyCups, "options_for", cups_get_options, 1);
+  rb_define_singleton_method(rubyCups, "device_uri_for", cups_get_device_uri, 1);
+  rb_define_singleton_method(rubyCups, "get_connection_for", cups_get_device_uri, 1);
 }
