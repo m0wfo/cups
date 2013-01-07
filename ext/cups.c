@@ -152,25 +152,10 @@ static VALUE cups_print(VALUE self)
   int encryption = (http_encryption_t)cupsEncryption();
   http_t *http = httpConnectEncrypt (url, port, (http_encryption_t) encryption);
   job_id = cupsPrintFile2(http, target, fname, "rCups", num_options, options); // Do it. "rCups" should be the filename/path
-    
-  cupsFreeOptions(num_options, options);
+  //   
+  // cupsFreeOptions(num_options, options);
   
   rb_iv_set(self, "@job_id", INT2NUM(job_id));
-  
-  
-  // 25.03 free memory
-  if(fname != NULL)
-    free(fname);
-    
-  if(url != NULL)
-    free(url);
-    
-  if(target != NULL)
-    free(target);
-    
-  if(http != NULL)
-    free(http);
-    
   return Qtrue;    
 }
 
@@ -325,13 +310,6 @@ static VALUE cups_get_job_state(VALUE self)
     cupsFreeJobs(num_jobs, jobs);
  
     jstate = ipp_state_to_symbol(job_state);
-
-    if(jobs != NULL)
-      free(jobs);
-      
-    if(printer_arg != NULL)
-      free(printer_arg);
-
     return jstate;
   }
 }
@@ -368,12 +346,6 @@ static VALUE cups_job_completed(VALUE self)
       
       // Free job array
       cupsFreeJobs(num_jobs, jobs);
-      
-      if(jobs != NULL)
-        free(jobs);
-        
-      if(printer_arg != NULL)
-        free(printer_arg);
       
       if (job_state == IPP_JOB_COMPLETED) {
         return Qtrue;
@@ -456,10 +428,7 @@ static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
-    
-    if(target != NULL)
-      free(target);
-      
+          
     return Qtrue;
   }
 }
