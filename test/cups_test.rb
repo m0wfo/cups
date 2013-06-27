@@ -110,14 +110,23 @@ class CupsTest < Test::Unit::TestCase
   def test_dest_options_raises_exception_if_not_real
     assert_raise(RuntimeError, "The printer or destination doesn't exist!") { Cups.options_for("bollocks_printer") }
   end
-  
+
   def test_job_failed_boolean
     pj = Cups::PrintJob.new(sample, @printer)
     pj.print
     pj.cancel
     assert !pj.failed?
   end
-  
+
+  def test_job_title
+      pj = Cups::PrintJob.new(sample, @printer)
+      pj.title = 'a-test-job'
+      pj.print
+      job = Cups.all_jobs(@printer)[ pj.job_id ]
+      assert_equal 'a-test-job', job[:title]
+      pj.cancel
+  end
+
   def test_returns_failure_string_on_cancellation
     pj = Cups::PrintJob.new(blank_sample, @printer)
     pj.print
