@@ -109,20 +109,22 @@ static VALUE cups_print(VALUE self)
 {
   int job_id;
   VALUE file = rb_iv_get(self, "@filename");
+  VALUE rname = rb_iv_get(self, "@title");
   VALUE printer = rb_iv_get(self, "@printer");
   VALUE url_path = rb_iv_get(self, "@url_path");
 
   char *fname = RSTRING_PTR(file); // Filename
+  char *title = T_STRING == TYPE(rname) ? RSTRING_PTR(rname) : "rCups";
   char *target = RSTRING_PTR(printer); // Target printer string
   char *url = RSTRING_PTR(url_path); // Server URL address
   int port = 631; // Default CUPS port
-    
+
   VALUE job_options = rb_iv_get(self, "@job_options");
 
   // Create an array of the keys from the job_options hash
   VALUE job_options_keys = rb_ary_new();
   rb_hash_foreach(job_options, cups_keys_i, job_options_keys);
-  
+
   VALUE iter;
   int num_options = 0;
   cups_option_t *options = NULL;
@@ -520,6 +522,7 @@ void Init_cups() {
   rb_define_attr(printJobs, "url_path", 1, 0);
   rb_define_attr(printJobs, "job_id", 1, 0);
   rb_define_attr(printJobs, "job_options", 1, 0);
+  rb_define_attr(printJobs, "title", 1, 1);
 
   // Cups::PrintJob Methods
   rb_define_method(printJobs, "initialize", job_init, -1);
