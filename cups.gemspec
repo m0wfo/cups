@@ -1,8 +1,8 @@
 Gem::Specification.new do |s|
   s.name = %q{cups}
-  s.version = "0.1.5"
-  s.authors = ["Tadej Murovec", "Ivan Turkovic", "Chris Mowforth"]
-  s.email = ["tadej.murovec@gmail.com", "me@ivanturkovic.com", "chris@mowforth.com"]
+  s.version = "0.1.6"
+  s.authors = ["Nathan Stitt", "Tadej Murovec", "Ivan Turkovic", "Chris Mowforth"]
+  s.email = ["nathan@stitt.org", "tadej.murovec@gmail.com", "me@ivanturkovic.com", "chris@mowforth.com"]
   s.summary = "A lightweight Ruby library for printing."
   s.description = <<-EOF
     Ruby CUPS provides a wrapper for the Common UNIX Printing System, allowing rubyists to perform basic tasks like printer discovery, job submission & querying.
