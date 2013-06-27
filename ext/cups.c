@@ -116,7 +116,7 @@ static VALUE cups_print(VALUE self)
   char *fname = RSTRING_PTR(file); // Filename
   char *title = T_STRING == TYPE(rname) ? RSTRING_PTR(rname) : "rCups";
   char *target = RSTRING_PTR(printer); // Target printer string
-  char *url = RSTRING_PTR(url_path); // Server URL address
+  const char *url = RSTRING_PTR(url_path); // Server URL address
   int port = 631; // Default CUPS port
 
   VALUE job_options = rb_iv_get(self, "@job_options");
