@@ -336,27 +336,27 @@ static VALUE cups_job_completed(VALUE self)
 
   if (NIL_P(job_id)) {
     return Qfalse;
-  } else {
-    num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    // job_state = IPP_JOB_COMPLETED;
+  }
 
-    for (i = 0; i < num_jobs; i ++) {
-      if (jobs[i].id == NUM2INT(job_id)) {
-        job_state = jobs[i].state;
-        break;
-      }
-      
-      // Free job array
-      cupsFreeJobs(num_jobs, jobs);
-      
-      if (job_state == IPP_JOB_COMPLETED) {
-        return Qtrue;
-      } else {
-        return Qfalse;
-      }
-      
+  num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
+
+  // find our job
+  for (i = 0; i < num_jobs; i ++) {
+    if (jobs[i].id == NUM2INT(job_id)) {
+      job_state = jobs[i].state;
+      break;
     }
-  }  
+  }
+
+  // Free job array
+  cupsFreeJobs(num_jobs, jobs);
+
+  if (job_state == IPP_JOB_COMPLETED) {
+    return Qtrue;
+  } else {
+    return Qfalse;
+  }
+
 }
 
 /*
