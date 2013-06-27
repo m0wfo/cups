@@ -40,7 +40,7 @@ int printer_exists(VALUE printer){
   // First call Cups#show_destinations
   VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
   // Then check the printer arg is included in the returned array...
-  rb_ary_includes(dest_list, printer) ? 1 : 0;
+  return rb_ary_includes(dest_list, printer) ? 1 : 0;
 }
 
 /*
