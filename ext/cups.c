@@ -198,8 +198,9 @@ static VALUE cups_get_default(VALUE self)
     VALUE def_p = rb_str_new2(default_printer);
 
     return def_p;
+  } else {
+    return Qnil;
   }
-  // should return nil if no default printer is found!
 }
 
 /*
