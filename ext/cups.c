@@ -40,7 +40,7 @@ int printer_exists(VALUE printer){
   // First call Cups#show_destinations
   VALUE dest_list = rb_funcall(rubyCups, rb_intern("show_destinations"), 0);
   // Then check the printer arg is included in the returned array...
-  rb_ary_includes(dest_list, printer) ? 1 : 0;
+  return rb_ary_includes(dest_list, printer) ? 1 : 0;
 }
 
 /*
@@ -116,7 +116,7 @@ static VALUE cups_print(VALUE self)
   char *fname = RSTRING_PTR(file); // Filename
   char *title = T_STRING == TYPE(rname) ? RSTRING_PTR(rname) : "rCups";
   char *target = RSTRING_PTR(printer); // Target printer string
-  char *url = RSTRING_PTR(url_path); // Server URL address
+  const char *url = RSTRING_PTR(url_path); // Server URL address
   int port = 631; // Default CUPS port
 
   VALUE job_options = rb_iv_get(self, "@job_options");
@@ -337,27 +337,27 @@ static VALUE cups_job_completed(VALUE self)
 
   if (NIL_P(job_id)) {
     return Qfalse;
-  } else {
-    num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
-    // job_state = IPP_JOB_COMPLETED;
+  }
 
-    for (i = 0; i < num_jobs; i ++) {
-      if (jobs[i].id == NUM2INT(job_id)) {
-        job_state = jobs[i].state;
-        break;
-      }
-      
-      // Free job array
-      cupsFreeJobs(num_jobs, jobs);
-      
-      if (job_state == IPP_JOB_COMPLETED) {
-        return Qtrue;
-      } else {
-        return Qfalse;
-      }
-      
+  num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
+
+  // find our job
+  for (i = 0; i < num_jobs; i ++) {
+    if (jobs[i].id == NUM2INT(job_id)) {
+      job_state = jobs[i].state;
+      break;
     }
-  }  
+  }
+
+  // Free job array
+  cupsFreeJobs(num_jobs, jobs);
+
+  if (job_state == IPP_JOB_COMPLETED) {
+    return Qtrue;
+  } else {
+    return Qfalse;
+  }
+
 }
 
 /*
