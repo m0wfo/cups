@@ -153,7 +153,7 @@ static VALUE cups_print(VALUE self)
     
   int encryption = (http_encryption_t)cupsEncryption();
   http_t *http = httpConnectEncrypt (url, port, (http_encryption_t) encryption);
-  job_id = cupsPrintFile2(http, target, fname, "rCups", num_options, options); // Do it. "rCups" should be the filename/path
+  job_id = cupsPrintFile2(http, target, fname, title, num_options, options); // Do it. "rCups" should be the filename/path
   //   
   // cupsFreeOptions(num_options, options);
   
