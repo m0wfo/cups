@@ -2,8 +2,8 @@
 
 // st.h is needed for ST_CONTINUE constant
 #ifdef __APPLE__
-  #include <ruby.h>
-  #include <st.h>
+  #include <ruby/ruby.h>
+  #include <ruby/st.h>
 #else
   #include <ruby.h>
   #include <st.h>
