@@ -10,7 +10,7 @@ VALUE ipp_state_to_symbol(int state)
 
   switch (state) {
     case IPP_JOB_PENDING :
-      jstate = ID2SYM(rb_intern("pending"));  
+      jstate = ID2SYM(rb_intern("pending"));
       break;
     case IPP_JOB_HELD :
       jstate = ID2SYM(rb_intern("held"));
@@ -53,12 +53,12 @@ int printer_exists(VALUE printer){
 static VALUE job_init(int argc, VALUE* argv, VALUE self)
 {
   VALUE filename, printer, job_options;
-  
+
   rb_scan_args(argc, argv, "12", &filename, &printer, &job_options);
-  
+
   rb_iv_set(self, "@filename", filename);
   rb_iv_set(self, "@url_path", rb_str_new2(cupsServer()));
-  
+
   if (NIL_P(job_options)) {
     rb_iv_set(self, "@job_options", rb_hash_new());
   } else {
@@ -75,7 +75,7 @@ static VALUE job_init(int argc, VALUE* argv, VALUE self)
 		} else {
 			rb_iv_set(self, "@printer", def_p);
 		}
-    
+
   } else {
     if (printer_exists(printer)) {
       rb_iv_set(self, "@printer", printer);
@@ -150,15 +150,16 @@ static VALUE cups_print(VALUE self)
   if(NIL_P(url)) {
     url = cupsServer();
   }
-    
+
   int encryption = (http_encryption_t)cupsEncryption();
-  http_t *http = httpConnectEncrypt (url, port, (http_encryption_t) encryption);
+  http_t *http = httpConnect2(url, port, NULL, AF_UNSPEC, (http_encryption_t) encryption, 1, 30000, NULL);
+
   job_id = cupsPrintFile2(http, target, fname, title, num_options, options); // Do it. "rCups" should be the filename/path
-  //   
+  //
   // cupsFreeOptions(num_options, options);
-  
+
   rb_iv_set(self, "@job_id", INT2NUM(job_id));
-  return Qtrue;    
+  return Qtrue;
 }
 
 /*
@@ -173,13 +174,13 @@ static VALUE cups_show_dests(VALUE self)
   int i;
   int num_dests = cupsGetDests(&dests); // Size of dest_list array
   dest_list = rb_ary_new2(num_dests);
-  
+
   for (i = num_dests, dest = dests; i > 0; i --, dest ++) {
     VALUE destination = rb_str_new2(dest->name);
     rb_ary_push(dest_list, destination); // Add this testination name to dest_list string
   }
-  
-  cupsFreeDests(num_dests, dests);  
+
+  cupsFreeDests(num_dests, dests);
   return dest_list;
 }
 
@@ -214,7 +215,7 @@ static VALUE cups_cancel(VALUE self)
   VALUE printer, job_id;
   printer = rb_iv_get(self, "@printer");
   job_id = rb_iv_get(self, "@job_id");
-  
+
   if (NIL_P(job_id)) {
     return Qfalse; // If @job_id is nil
   } else { // Otherwise attempt to cancel
@@ -252,7 +253,7 @@ static VALUE cups_job_failed(VALUE self)
 static VALUE cups_get_error_reason(VALUE self)
 {
   VALUE job_id = rb_iv_get(self, "@job_id");
-  
+
   if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
     return Qnil;
   } else {
@@ -270,7 +271,7 @@ static VALUE cups_get_error_reason(VALUE self)
 static VALUE cups_get_error_code(VALUE self)
 {
   VALUE job_id = rb_iv_get(self, "@job_id");
-  
+
   if (NIL_P(job_id) || !NUM2INT(job_id) == 0) {
     return Qnil;
   } else {
@@ -290,13 +291,13 @@ static VALUE cups_get_job_state(VALUE self)
   VALUE job_id = rb_iv_get(self, "@job_id");
   VALUE printer = rb_iv_get(self, "@printer");
   VALUE jstate;
-  
+
   int num_jobs;
   cups_job_t *jobs;
   ipp_jstate_t job_state = IPP_JOB_PENDING;
   int i;
   char *printer_arg = RSTRING_PTR(printer);
- 
+
   if (NIL_P(job_id)) {
     return Qnil;
   } else {
@@ -311,7 +312,7 @@ static VALUE cups_get_job_state(VALUE self)
 
     // Free job array
     cupsFreeJobs(num_jobs, jobs);
- 
+
     jstate = ipp_state_to_symbol(job_state);
     return jstate;
   }
@@ -378,7 +379,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   if (!printer_exists(printer)){
     rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
   }
-  
+
   VALUE job_list, job_info_hash, jid, jtitle, juser, jsize, jformat, jstate;
   int job_id;
   int num_jobs;
@@ -386,10 +387,10 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
   ipp_jstate_t state;
   int i;
   char *printer_arg = RSTRING_PTR(printer);
-  
+
   num_jobs = cupsGetJobs(&jobs, printer_arg, 1, -1); // Get jobs
   job_list = rb_hash_new();
-  
+
   for (i = 0; i < num_jobs; i ++) { // Construct a hash of individual job info
     job_info_hash = rb_hash_new();
     jid = INT2NUM(jobs[i].id);
@@ -404,7 +405,7 @@ static VALUE cups_get_jobs(VALUE self, VALUE printer)
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("size")), jsize);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("format")), jformat);
     rb_hash_aset(job_info_hash, ID2SYM(rb_intern("state")), jstate);
-    
+
     rb_hash_aset(job_list, jid, job_info_hash); // And push it all into job_list hash
   }
 
@@ -423,7 +424,7 @@ static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
 {
   VALUE printer, job_id;
   rb_scan_args(argc, argv, "20", &job_id, &printer);
-    
+
   if (NIL_P(job_id)) {
     return Qfalse; // If @job_id is nil
   } else { // Otherwise attempt to cancel
@@ -431,7 +432,7 @@ static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
     char *target = RSTRING_PTR(printer); // Target printer string
     int cancellation;
     cancellation = cupsCancelJob(target, job);
-          
+
     return Qtrue;
   }
 }
@@ -442,29 +443,29 @@ static VALUE cups_cancel_print(int argc, VALUE* argv, VALUE self)
  *
  *  Return uri for requested printer.
  */
-static VALUE cups_get_device_uri(VALUE self, VALUE printer) 
+static VALUE cups_get_device_uri(VALUE self, VALUE printer)
 {
-   if (!printer_exists(printer)) 
+   if (!printer_exists(printer))
    {
      rb_raise(rb_eRuntimeError, "The printer or destination doesn't exist!");
    }
-   
+
    VALUE options_list;
    http_t *http;
    ipp_t *request;
    ipp_t *response;
    ipp_attribute_t *attr;
    char uri[1024];
-   char *location;   
+   char *location;
    char *name = RSTRING_PTR(printer);
-      
+
    request = ippNewRequest(IPP_GET_PRINTER_ATTRIBUTES);
    httpAssembleURIf(HTTP_URI_CODING_ALL, uri, sizeof(uri), "ipp", NULL, "localhost", 0, "/printers/%s", name);
    ippAddString(request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL, uri);
-   
-   if ((response = cupsDoRequest(http, request, "/")) != NULL) 
+
+   if ((response = cupsDoRequest(http, request, "/")) != NULL)
    {
-     if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL) 
+     if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL)
      {
        return rb_str_new2(attr->values[0].string.text);
      }
@@ -498,7 +499,7 @@ static VALUE cups_get_options(VALUE self, VALUE printer)
   cups_dest_t *dest = cupsGetDest(printer_arg, NULL, num_dests, dests);
 
   if (dest == NULL) {
-    cupsFreeDests(num_dests, dests);    
+    cupsFreeDests(num_dests, dests);
     return Qnil;
   } else {
     for(i =0; i< dest->num_options; i++) {
