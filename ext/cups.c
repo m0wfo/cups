@@ -157,6 +157,7 @@ static VALUE cups_print(VALUE self)
   job_id = cupsPrintFile2(http, target, fname, title, num_options, options); // Do it. "rCups" should be the filename/path
   //
   // cupsFreeOptions(num_options, options);
+  httpClose(http);
 
   rb_iv_set(self, "@job_id", INT2NUM(job_id));
   return Qtrue;
