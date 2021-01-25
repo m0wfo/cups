@@ -468,7 +468,7 @@ static VALUE cups_get_device_uri(VALUE self, VALUE printer)
    {
      if((attr = ippFindAttribute(response, "device-uri", IPP_TAG_URI)) != NULL)
      {
-       return rb_str_new2(attr->values[0].string.text);
+       return rb_str_new2(ippGetString(attr, 0, NULL));
      }
      ippDelete(response);
    }
