@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = %q{cups}
-  s.version = "0.1.10"
+  s.version = "0.1.11"
   s.authors = ["Nathan Stitt", "Tadej Murovec", "Ivan Turkovic", "Chris Mowforth"]
   s.email = ["nathan@stitt.org", "tadej.murovec@gmail.com", "me@ivanturkovic.com", "chris@mowforth.com"]
   s.summary = "A lightweight Ruby library for printing."

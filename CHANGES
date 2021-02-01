@@ -1,4 +1,9 @@
-== Version 0.0.10
+== Version 0.1.11
+
+2021-01-25: Removed support for _IPP_PRIVATE_STRUCTURES [sasa-friedrich-bitlab]
+
+== Version 0.1.10
+
 2014-12-05: Build compatibility with Mac OS X 10.10 (Yosemite)
 
 == Version 0.0.7
